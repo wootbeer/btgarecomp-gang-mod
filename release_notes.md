@@ -6,7 +6,11 @@ More friendly and enemy tanks in every campaign mission. In the mod's options:
 - **Extra Enemies** and **Enemy Class**: AI tanks for the enemy, where its gang brings in its tanks.
 - **Enemy Orders**: Same as Theirs or Hunt.
 
-New in 0.1.3: Ally Orders has Auto, which picks Hunt or Escort from the mission's goal.
+New in 0.1.4: Remove Trains.
+
+In 0.1.3: Ally Orders has Auto, which picks Hunt or Escort from the mission's goal.
+
+- **Remove Trains**: takes the trains out of every level.
 
 A class change starts with the next mission.
 

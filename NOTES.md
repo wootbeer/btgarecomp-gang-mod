@@ -163,3 +163,23 @@ SF Breakout, checked in the game). `func_800E8C88(level)` gives its name,
 17-21 are the multiplayer maps (Lakepark, Panhandle, Railyard, SFO,
 Crossfire). Ally Orders' Auto hunts in the "destroy all" levels (26, 1, 5, 8,
 10, 15, 24) and escorts in the rest.
+
+## Objects and trains
+- Generic objects: 0x44-byte entries from `0x80224EF0`. `+0x00` serial (0 =
+  free), `+0x04` type, `+0x08` next index in the type's list (s16, -1 ends),
+  then the object's data. List heads by type at `0x80224E68` (s16 each), free
+  list head at `0x80224B50`. `func_800A18D0(type, size)` makes one,
+  `func_800A1A28(prev, type)` walks a type.
+- Per-type callbacks, 12 bytes per type from `0x80224B58`: `+0` update (run by
+  the loop at `0x800A1DDC`; an update that sets its result to 1 has its object
+  freed at `0x800A1E94`), `+4` and `+8` used elsewhere (`0x80090BBC`,
+  `0x800A20B0`).
+- Type 1 is a train (update `func_800EED90`; `+0x2C` distance along the track,
+  `+0x30` first car, `+0x40` engine sound handle, stopped with
+  `func_80097BA4(handle, 0)`). Type 2 is a train car (`+0x10` its train,
+  `+0x18` its distance), made by the code at `0x800EF400`; cars have no update
+  of their own. Truck Stop has two trains with 12 cars.
+- The campaign is a list of steps at `0x801254C0` (cutscenes and levels;
+  level steps have the level id at `+0x04`), the current one at `0x803A8310`.
+  Setting it (and `0x8021949C`) then choosing Restart in the pause menu loads
+  that level: SF Airport is step 3, SF Breakout 5, Truck Stop 7.

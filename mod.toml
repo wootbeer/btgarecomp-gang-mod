@@ -4,7 +4,7 @@
 
 id = "btga_gang_mod"
 
-version = "0.1.3"
+version = "0.1.4"
 
 # Shown in the Mods menu.
 display_name = "Gang Mod: Extra Tanks"
@@ -100,3 +100,11 @@ description = "What the extra enemies do. Same as Theirs: what the mission's own
 type = "Enum"
 options = [ "Same as Theirs", "Hunt" ]
 default = "Same as Theirs"
+
+[[manifest.config_options]]
+id = "remove_trains"
+name = "Remove Trains"
+description = "Takes the trains out of every level (Truck Stop, Texas Slave Fortress, the Railyard and so on), a second after the level starts."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "Off"

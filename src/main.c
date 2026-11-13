@@ -10,6 +10,7 @@
 #include "modding.h"
 #include "recompconfig.h"
 #include "btga.h"
+#include "trains.h"
 
 // Never fill the last few tank slots: the game needs them for its own
 // tanks (generators, convoys, your respawn).
@@ -411,6 +412,8 @@ static void step_side(Side* s, u32 wanted, s32 now, u8* ref, u32 class_option, s
 // func_8007A0A0 starts each frame of the game's main loop.
 RECOMP_HOOK("func_8007A0A0")
 void gang_mod_on_frame(void) {
+    trains_frame();
+
     u32 ally_count = recomp_get_config_u32("ally_count");
     u32 ally_class = recomp_get_config_u32("ally_class");
     u32 enemy_count = recomp_get_config_u32("enemy_count");

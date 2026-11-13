@@ -73,7 +73,24 @@ typedef double f64;
 #define GANG_WEAPON_A(g)    (*(s32*)((g) + 0x1F4))
 #define GANG_WEAPON_B(g)    (*(s32*)((g) + 0x1F8))
 
-// Generic game objects (first word after the link is the object's type).
+// Generic game objects: a pool of 0x44-byte entries. +0x00 serial (0 = free),
+// +0x04 type, +0x08 next index in its type's list (s16, -1 ends it), then the
+// object's own data. Each type's list starts at BTGA_OBJ_HEAD(type); free
+// entries are chained from BTGA_OBJ_FREE_HEAD. (func_800A18D0 makes one,
+// func_800A1A28 walks a type, the loop at 0x800A1DDC runs and frees them.)
+#define BTGA_OBJ_POOL        0x200
+#define BTGA_OBJ(idx)        ((u8*)(0x80224EF0 + 0x44 * (s32)(idx)))
+#define BTGA_OBJ_HEAD(type)  (*(volatile s16*)(0x80224E68 + 2 * (type)))
+#define BTGA_OBJ_FREE_HEAD   (*(volatile s16*)0x80224B50)
+#define OBJ_NEXT(o)          (*(volatile s16*)((o) + 0x08))
+#define OBJ_TYPE_TRAIN       1
+#define OBJ_TYPE_TRAIN_CAR   2
+#define TRAIN_SOUND(o)       (*(volatile s32*)((o) + 0x40)) // its engine sound, 0 = none
+
+// Stops a sound started with func_80097A6C.
+void func_80097BA4(s32 handle, s32 a1);
+
+// Tank generators etc. (first word after the link is the object's type).
 #define OBJ_TYPE(o)          (*(s32*)((o) + 0x04))
 #define OBJ_TYPE_TANK_SPAWNER 0x0D
 #define SPAWNER_X(o)         (*(f32*)((o) + 0x0C))

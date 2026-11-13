@@ -28,6 +28,10 @@ In each campaign mission, the mod adds the tanks you pick in the Mods menu:
   spot do, or Hunt if those just wait) or Hunt (they come after you and your
   allies).
 
+- **Remove Trains** (Off/On): takes the trains and their cars out of every
+  level (Truck Stop, Texas Slave Fortress, the Railyard map and so on), about
+  a second after the level starts.
+
 The classes are M1A1, Mototank, Goliath, FLP-E Tank, Hovertank, Rattler,
 Rhino, M-2 Hydra, Inferno, Marksman and Hornet. The Attack Boat and the boss
 tanks aren't in the list.
