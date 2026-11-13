@@ -132,3 +132,34 @@ type 4) on the viewer's layer (`+0x94`).
   (0x203), so the arrows aren't always there.
 - With Escort, the allies go out to enemies that come near, kill them, and
   come back to you.
+
+## Levels and goals
+The level being played is the word at `0x8021949C` (26 in SF Airport, 0 in
+SF Breakout, checked in the game). `func_800E8C88(level)` gives its name,
+`func_800E8E34(level)` its goal:
+
+| Id | Level | Goal |
+|---|---|---|
+| 26 | SF Airport | Destroy all invading tanks |
+| 0 | SF Breakout | Get to the escape ship |
+| 1 | Truck Stop | Destroy all tanks and bunkers |
+| 2 | Texas Slave Fortress | Rescue all prisoners |
+| 3 | Drive In | Destroy both projector buildings |
+| 4 | DC Mall | Capture all data and escape |
+| 5 | White House | Destroy all enemies |
+| 6 | Houses of Parliament | Rescue all Iron Maidens and escape |
+| 7 | Tower Bridge | Get across the bridge |
+| 8 | Tower of London | Destroy all tanks and boats |
+| 9 | Bistro | Get all four scientists in your base |
+| 10 | Champs Elysee | Destroy all tanks |
+| 11 | Eiffel Tower | Destroy the Eiffel Tower reactor |
+| 12 | Berlin War Zone | Rescue all prisoners and escape |
+| 13 | Brandenburg Gate | Escort the convoy into Berlin |
+| 14 | Escape from Berlin | Protect the convoy |
+| 15 | Assault on SF | Destroy all tanks and boats |
+| 16 | Alcatraz | Find and destroy the Annihilator |
+| 24 | Shore Patrol | Destroy all tanks and boats |
+
+17-21 are the multiplayer maps (Lakepark, Panhandle, Railyard, SFO,
+Crossfire). Ally Orders' Auto hunts in the "destroy all" levels (26, 1, 5, 8,
+10, 15, 24) and escorts in the rest.

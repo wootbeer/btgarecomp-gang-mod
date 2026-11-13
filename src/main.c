@@ -318,6 +318,36 @@ void gang_mod_pick_target_end(void) {
     }
 }
 
+// Ally Orders (mod.toml): 0 Auto, 1 Escort You, 2 Hunt Enemies.
+#define ORDERS_AUTO   0
+#define ORDERS_ESCORT 1
+#define ORDERS_HUNT   2
+
+// Auto: hunt in the levels whose goal is to destroy every enemy tank, escort
+// in the rest (get somewhere, rescue, protect, destroy a building). Level ids
+// and goals from func_800E8C88 / func_800E8E34.
+static s32 level_hunts(s32 level) {
+    switch (level) {
+        case 26: // SF Airport: destroy all invading tanks
+        case 1:  // Truck Stop: destroy all tanks and bunkers
+        case 5:  // White House: destroy all enemies
+        case 8:  // Tower of London: destroy all tanks and boats
+        case 10: // Champs Elysee: destroy all tanks
+        case 15: // Assault on SF: destroy all tanks and boats
+        case 24: // Shore Patrol: destroy all tanks and boats
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+static s32 allies_escort(u32 orders) {
+    if (orders == ORDERS_AUTO) {
+        return !level_hunts(BTGA_LEVEL_ID);
+    }
+    return orders == ORDERS_ESCORT;
+}
+
 // One step of a side: makes at most one tank. `wanted` is how many to add.
 // `ai_state` < 0: take it from the reference tank's generator (enemies),
 // or hunt if it has none.
@@ -429,7 +459,7 @@ void gang_mod_on_frame(void) {
 
     if (ally_count > 0) {
         // Both orders use the hunt state; Escort picks its targets (above).
-        step_side(&allies, ally_count, now, player, ally_class, 0, AI_HUNT, ally_orders == 0);
+        step_side(&allies, ally_count, now, player, ally_class, 0, AI_HUNT, allies_escort(ally_orders));
     }
     if (enemy_count > 0) {
         step_side(&enemies, enemy_count, now, find_enemy(TANK_GANG(player)), enemy_class, 1,

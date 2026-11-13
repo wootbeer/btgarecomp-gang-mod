@@ -2,11 +2,11 @@
 
 More friendly and enemy tanks in every campaign mission. In the mod's options:
 - **Extra Allies** and **Ally Class**: AI tanks on your side, next to you a couple of seconds in.
-- **Ally Orders**: Escort You or Hunt Enemies.
+- **Ally Orders**: Auto, Escort You or Hunt Enemies. Auto hunts in the destroy-all-enemies missions and escorts in the rest.
 - **Extra Enemies** and **Enemy Class**: AI tanks for the enemy, where its gang brings in its tanks.
 - **Enemy Orders**: Same as Theirs or Hunt.
 
-New in 0.1.2: allies fight. Escort You keeps them with you and sends them at enemies that come near you or them; Hunt Enemies makes them hunt like the mission's own allies.
+New in 0.1.3: Ally Orders has Auto, which picks Hunt or Escort from the mission's goal.
 
 A class change starts with the next mission.
 

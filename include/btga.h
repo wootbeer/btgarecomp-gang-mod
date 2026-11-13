@@ -35,6 +35,10 @@ typedef double f64;
 #define BTGA_GAME_MODE (*(volatile u32*)0x80117EB4)
 #define BTGA_MODE_CAMPAIGN 1
 
+// The level being played (the id func_800E8C88 / func_800E8E34 take for its
+// name and goal text). See level_hunts() in src/main.c for the campaign ones.
+#define BTGA_LEVEL_ID (*(volatile s32*)0x8021949C)
+
 // Level clock, in 1/30 s. Set to 0 when a level starts.
 #define BTGA_LEVEL_TIME (*(volatile s32*)0x8021945C)
 
