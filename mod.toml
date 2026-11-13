@@ -1,0 +1,86 @@
+# Settings for the mod. RecompModTool reads this to make the .nrm file.
+
+[manifest]
+
+id = "btga_gang_mod"
+
+version = "0.1.0"
+
+# Shown in the Mods menu.
+display_name = "Gang Mod: Extra Tanks"
+description = """
+More friendly and enemy tanks in every campaign mission. \
+Pick how many to add to each side, and what class of tank, in this mod's options.
+
+Allies join your gang next to you a couple of seconds into the mission. \
+Enemies join the first enemy gang that shows up, where it brings in its tanks. \
+They're the game's own AI tanks.
+
+https://github.com/wootbeer/btgarecomp-gang-mod"""
+short_description = "More ally and enemy tanks in the campaign."
+
+authors = [ "wootbeer" ]
+
+game_id = "btga"
+
+minimum_recomp_version = "0.1.8"
+
+dependencies = []
+optional_dependencies = []
+
+native_libraries = []
+
+[inputs]
+
+elf_path = "build/mod.elf"
+
+mod_filename = "btga_gang_mod"
+
+func_reference_syms_file = "syms/battletanxga.us.rev0.syms.toml"
+data_reference_syms_files = []
+
+additional_files = [ "thumb.png" ]
+
+# Options shown in the Mods menu. Read them with recomp_get_config_u32.
+# Class choices: Random, the mission's own (or yours, for allies), then the
+# tanks in the game's order. src/main.c relies on this order.
+
+[[manifest.config_options]]
+id = "ally_count"
+name = "Extra Allies"
+description = "How many AI tanks to add to your side in each campaign mission."
+type = "Number"
+min = 0
+max = 10
+step = 1
+precision = 0
+percent = false
+default = 2
+
+[[manifest.config_options]]
+id = "ally_class"
+name = "Ally Class"
+description = "The class of the extra allies. Random picks a different one for each. Same as Yours copies your tank. A class change starts with the next mission."
+type = "Enum"
+options = [ "Random", "Same as Yours", "M1A1", "Mototank", "Goliath", "FLP-E Tank", "Hovertank", "Rattler", "Rhino", "M-2 Hydra", "Inferno", "Marksman", "Hornet" ]
+default = "Random"
+
+[[manifest.config_options]]
+id = "enemy_count"
+name = "Extra Enemies"
+description = "How many AI tanks to add to the enemy in each campaign mission. They come in when the first enemy tank shows up."
+type = "Number"
+min = 0
+max = 15
+step = 1
+precision = 0
+percent = false
+default = 3
+
+[[manifest.config_options]]
+id = "enemy_class"
+name = "Enemy Class"
+description = "The class of the extra enemies. Random picks a different one for each. Same as Theirs copies the first enemy tank. A class change starts with the next mission."
+type = "Enum"
+options = [ "Random", "Same as Theirs", "M1A1", "Mototank", "Goliath", "FLP-E Tank", "Hovertank", "Rattler", "Rhino", "M-2 Hydra", "Inferno", "Marksman", "Hornet" ]
+default = "Random"

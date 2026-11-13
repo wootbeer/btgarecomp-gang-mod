@@ -1,0 +1,46 @@
+# Builds the .nrm on every push. Download it from the run's Artifacts.
+# On main, it also makes a release with the .nrm when mod.toml has a new version.
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang
+        run: sudo apt-get update && sudo apt-get install -y clang-18 lld-18 zip
+
+      - name: Get RecompModTool
+        run: |
+          curl -sSLf -o RecompModTool https://github.com/N64Recomp/N64Recomp/releases/download/mod-tool-release/RecompModTool
+          chmod +x RecompModTool
+
+      - name: Build
+        run: make nrm CC=clang-18 LD=ld.lld-18
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mod
+          path: build/*.nrm
+
+      # On main: if there's no release for the version in mod.toml yet, make one.
+      - name: Release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=v$(grep -m1 '^version' mod.toml | cut -d'"' -f2)
+          if gh release view "$VERSION" > /dev/null 2>&1; then
+            echo "$VERSION is already released."
+          else
+            gh release create "$VERSION" build/*.nrm --target "$GITHUB_SHA" --title "$VERSION" --notes-file release_notes.md
+          fi
