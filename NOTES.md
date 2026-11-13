@@ -208,3 +208,19 @@ of the mod's (M1A1, Hunt) differ only in what they're doing at the moment:
 `+0x30`/`+0x5C` (motion), `+0xAC` (who it can see), `+0xE8..0xEC` (an attack
 run, `func_80089040`), `+0x140`/`+0x14C` (driving), `+0x230`/`+0x238` (last
 hit). Their setup is the same: same gang, control, state, skill, weapons.
+
+## AI skill and firing
+- Skill table at `0x80125C30`, 6 floats per level (10 levels), the gang's
+  level at `gang +0x1F0`. `func_80082A90` copies a level into the tank:
+  `+0x1B8` = [0] / `gang +0x1DC` (shot delay), `+0x1BC` = [1] x the class's
+  reach (`type +0xB8`, u16: M1A1 3500), sight; `+0x1C0` = [2] x reach, attack
+  range; `+0x1C4` = [3]; `+0x1C8` = [4] x health x `type +0xBC`, the health
+  it retreats at; `+0x1CC` = [5], the chance of using a special weapon.
+- Firing (`0x800873FC`): when the level clock passes `+0xD8` and `+0xDC`,
+  pick a weapon (`func_80089200`: a special weapon if the target is within
+  sight and a roll is under `+0x1CC`), fire (`func_80087DD4`), then wait
+  `(75 + rand 15) * +0x1B8 * 0.25` frames. Sight (`+0x1BC`) also decides
+  which tanks see each other (`0x80089984`, the smaller of the two).
+- The player's gang in SF Airport / Truck Stop is level 1: shot delay 2.5
+  (/1.1), sight 0.4, range 0.2, special weapons 0. Level 8 is the best: 1.0,
+  0.99, 0.4.

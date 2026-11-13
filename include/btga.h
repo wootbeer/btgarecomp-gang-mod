@@ -69,7 +69,11 @@ typedef double f64;
 #define TANK_SPAWNER(t)  (*(u8**)((t) + 0x4A0)) // the tank generator that made it, or NULL
 #define TANK_GANG_PTR(t) (*(u8**)((t) + 0x1D0))
 #define TANK_AI_STATE(t) (*(s32*)((t) + 0x168))
-#define TANK_AI_RANGE(t) (*(f32*)((t) + 0x1C0)) // how close it gets to attack
+// AI skill, copied from the skill table (0x80125C30, 24 bytes per level,
+// the gang's level at gang +0x1F0) by func_80082A90 when the tank is made:
+#define TANK_AI_SHOT_DELAY(t) (*(f32*)((t) + 0x1B8)) // x the wait between volleys: (75..90 frames) * this * 0.25
+#define TANK_AI_SIGHT(t)  (*(f32*)((t) + 0x1BC)) // how far it sees other tanks
+#define TANK_AI_RANGE(t)  (*(f32*)((t) + 0x1C0)) // how close it gets to attack
 #define TANK_AI_ATTACK(t) (*(u8*)((t) + 0xC4))  // 1: the target is to be attacked
 #define TANK_AI_HAS_TARGET(t) (*(u8*)((t) + 0xC5))
 #define TANK_AI_TARGET(t) (*(u8**)((t) + 0xC8))
@@ -77,6 +81,7 @@ typedef double f64;
 // Gangs: 0x250 bytes each.
 #define BTGA_GANG(i)        ((u8*)(0x80235F00 + 0x250 * (u32)(i)))
 #define GANG_FLAGS(g)       (*(u8*)((g) + 0x0A))
+#define GANG_SKILL_DIVISOR(g) (*(f32*)((g) + 0x1DC)) // divides the shot delay
 #define GANG_TEAM(g)        (*(u32*)((g) + 0x10)) // gangs with the same team are allies
 // The gang's base spots, where it brings in its own tanks (func_800A9080):
 // 5 of 12 bytes, x and z (f32), heading (u16), layer (u8).
@@ -134,6 +139,7 @@ enum {
     TANK_HORNET, TANK_ATTACK_BOAT, TANK_BOSS_A, TANK_BOSS_B, TANK_BOSS_C,
     TANK_TYPE_COUNT
 };
+#define TANK_TYPE_AI_REACH(i)   (*(u16*)(0x80122EE8 + 0xD0 * (u32)(i))) // sight and attack range = this * the skill's
 #define TANK_TYPE_PART_COUNT(i) (*(s32*)(0x80122E30 + 0xD0 * (u32)(i)))
 #define TANK_TYPE_PARTS(i)      (*(s32**)(0x80122E34 + 0xD0 * (u32)(i))) // pairs: part, model id
 

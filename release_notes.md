@@ -6,7 +6,9 @@ More friendly and enemy tanks in every campaign mission. In the mod's options:
 - **Extra Enemies** and **Enemy Class**: AI tanks for the enemy, where its gang brings in its tanks.
 - **Enemy Orders**: Same as Theirs or Hunt.
 
-New in 0.1.6: no tank is put on or right beside a train track.
+New in 0.1.7: Ally Skill and Enemy Skill (Game, Veteran, Elite). Elite allies see about 2.5 times as far and shoot about 2.5 times as often; in a test in Truck Stop they killed about three times as many enemies as the game's own skill.
+
+In 0.1.6: no tank is put on or right beside a train track.
 
 In 0.1.5:
 - Remove Trains.

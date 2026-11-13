@@ -4,7 +4,7 @@
 
 id = "btga_gang_mod"
 
-version = "0.1.6"
+version = "0.1.7"
 
 # Shown in the Mods menu.
 display_name = "Gang Mod: Extra Tanks"
@@ -74,6 +74,14 @@ options = [ "Auto", "Escort You", "Hunt Enemies" ]
 default = "Auto"
 
 [[manifest.config_options]]
+id = "ally_skill"
+name = "Ally Skill"
+description = "How good the extra allies are. Game: as the game makes them for your gang (they see about 0.4 of their class's range and wait about 1.6 s between volleys). Veteran: they see farther and shoot more often. Elite: the game's best AI level (they see about 2.5 times as far and shoot about 2.5 times as often)."
+type = "Enum"
+options = [ "Game", "Veteran", "Elite" ]
+default = "Veteran"
+
+[[manifest.config_options]]
 id = "enemy_count"
 name = "Extra Enemies"
 description = "How many AI tanks to add to the enemy in each campaign mission. They come in when the first enemy tank shows up."
@@ -108,3 +116,11 @@ description = "Takes the trains out of every level (Truck Stop, Texas Slave Fort
 type = "Enum"
 options = [ "Off", "On" ]
 default = "Off"
+
+[[manifest.config_options]]
+id = "enemy_skill"
+name = "Enemy Skill"
+description = "How good the extra enemies are (the mission's own enemies are left as they are). Game: as the game makes them for their gang. Veteran: they see farther and shoot more often. Elite: the game's best AI level."
+type = "Enum"
+options = [ "Game", "Veteran", "Elite" ]
+default = "Game"

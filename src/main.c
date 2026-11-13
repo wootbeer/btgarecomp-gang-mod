@@ -416,9 +416,18 @@ void gang_mod_pick_target_end(void) {
         return;
     }
 
-    u8* target = nearest_enemy(e, player, ENGAGE_DIST);
+    // Attack what's near you or the escort: within ENGAGE_DIST, or as far as
+    // the escort can see if that's farther.
+    f32 engage = TANK_AI_SIGHT(e);
+    if (!(engage > ENGAGE_DIST)) {
+        engage = ENGAGE_DIST;
+    }
+    if (engage > LEASH_DIST) {
+        engage = LEASH_DIST;
+    }
+    u8* target = nearest_enemy(e, player, engage);
     if (target == NULL) {
-        target = nearest_enemy(e, e, ENGAGE_DIST);
+        target = nearest_enemy(e, e, engage);
         if (target != NULL && dist2(target, player) > LEASH_DIST * LEASH_DIST) {
             target = NULL;
         }
@@ -433,6 +442,41 @@ void gang_mod_pick_target_end(void) {
     } else if (!(TANK_AI_HAS_TARGET(e) && TANK_AI_TARGET(e) == player && !TANK_AI_ATTACK(e))) {
         func_80088ABC(e, player, FOLLOW_RANGE, 0);
     }
+}
+
+// Ally Skill / Enemy Skill (mod.toml): 0 Game (as made), 1 Veteran, 2 Elite.
+// The game's skill levels (0x80125C30) run from shot delay 2.5 down to 1.0
+// and sight 0.1 up to 0.99 (x the class's reach); the player's gang is at
+// 2.5 and 0.4. Elite is the table's best level (8), Veteran in between.
+typedef struct {
+    f32 shot_delay;
+    f32 sight;
+    f32 range;
+} Skill;
+
+static const Skill skills[] = {
+    { 0.0f, 0.0f, 0.0f },   // Game: leave as made
+    { 1.6f, 0.75f, 0.3f },  // Veteran
+    { 1.0f, 0.99f, 0.4f },  // Elite
+};
+
+static void apply_skill(u8* tank, u32 level) {
+    if (level == 0 || level >= sizeof(skills) / sizeof(skills[0])) {
+        return;
+    }
+    s32 type = TANK_TYPE(tank);
+    u8* g = TANK_GANG_PTR(tank);
+    if (type < 0 || type >= TANK_TYPE_COUNT || g == NULL) {
+        return;
+    }
+    f32 reach = (f32)TANK_TYPE_AI_REACH(type);
+    f32 divisor = GANG_SKILL_DIVISOR(g);
+    if (!(divisor > 0.1f && divisor < 10.0f)) {
+        divisor = 1.0f;
+    }
+    TANK_AI_SHOT_DELAY(tank) = skills[level].shot_delay / divisor;
+    TANK_AI_SIGHT(tank) = skills[level].sight * reach;
+    TANK_AI_RANGE(tank) = skills[level].range * reach;
 }
 
 // Ally Orders (mod.toml): 0 Auto, 1 Escort You, 2 Hunt Enemies.
@@ -522,6 +566,7 @@ static void step_side(Side* s, u32 wanted, s32 now, u8* ref, u32 class_option, s
     if (tank != NULL) {
         s->made++;
         s->tries = 0;
+        apply_skill(tank, recomp_get_config_u32(s == &allies ? "ally_skill" : "enemy_skill"));
         if (s == &allies && escorting && escort_count < MAX_ESCORTS) {
             escorts[escort_count++] = tank;
         }

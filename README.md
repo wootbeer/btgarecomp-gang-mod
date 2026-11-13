@@ -23,9 +23,18 @@ In each campaign mission, the mod adds the tanks you pick in the Mods menu:
     is moved up behind you.
   - **Hunt Enemies**: they go after the enemy on their own, like the
     mission's own allies.
+- **Ally Skill**: Game, Veteran (default) or Elite. The game makes your
+  gang's AI tanks see only about 0.4 of their class's range and wait about
+  1.6 s between volleys, so they often only shoot back once an enemy is close.
+  Veteran sees and shoots more; Elite is the game's best AI level (sight
+  about 2.5 times as far, about 0.6 s between volleys). In a Truck Stop test
+  (drive in, then sit for 45 s, not firing), Elite escorts killed 11-12
+  enemies to Game's 4.
 - **Extra Enemies** (0-15): AI tanks in the enemy gang. They come in when the
   first enemy tank shows up, at the spot its gang brings in its tanks (or next
   to it).
+- **Enemy Skill**: Game (default), Veteran or Elite, for the extra enemies
+  only.
 - **Enemy Class**: Random, Same as Theirs, or any of the 11 tank classes.
 - **Enemy Orders**: Same as Theirs (what the mission's own tanks from that
   spot do, or Hunt if those just wait) or Hunt (they come after you and your
