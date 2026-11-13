@@ -127,7 +127,7 @@ type 4) on the viewer's layer (`+0x94`).
   if within 2600 of you), attacked at the tank's `+0x1C0` range; with none,
   you, at 400, not attacked.
 
-## Watched in the game (local build, SF Airport and Alcatraz)
+## Watched in the game (SF Airport and SF Breakout)
 - Mission 1 can start your tank without radar (`+0x1E0` 0x003) or with it
   (0x203), so the arrows aren't always there.
 - With Escort, the allies go out to enemies that come near, kill them, and

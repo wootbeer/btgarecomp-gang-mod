@@ -1,25 +1,14 @@
-## Gang Mod: Extra Tanks
+## Gang Mod: Extra Tanks 1.0.0
 
-More friendly and enemy tanks in every campaign mission. In the mod's options:
-- **Extra Allies** and **Ally Class**: AI tanks on your side, next to you a couple of seconds in.
-- **Ally Orders**: Auto, Escort You or Hunt Enemies. Auto hunts in the destroy-all-enemies missions and escorts in the rest.
-- **Extra Enemies** and **Enemy Class**: AI tanks for the enemy, where its gang brings in its tanks.
-- **Enemy Orders**: Same as Theirs or Hunt.
+More friendly and enemy tanks in every campaign mission of the BattleTanx: Global Assault recomp. Everything is set in the mod's options:
 
-New in 0.1.7: Ally Skill and Enemy Skill (Game, Veteran, Elite). Elite allies see about 2.5 times as far and shoot about 2.5 times as often; in a test in Truck Stop they killed about three times as many enemies as the game's own skill.
-
-In 0.1.6: no tank is put on or right beside a train track.
-
-In 0.1.5:
-- Remove Trains.
-- Extra allies come in on your gang's own spawn spots, so they can drive out (some used to get stuck behind barriers).
-- Escorts that fall far behind (out of sight in the fog) are brought up behind you.
-
-In 0.1.3: Ally Orders has Auto, which picks Hunt or Escort from the mission's goal.
-
+- **Extra Allies** (0-10), **Ally Class**: AI tanks in your gang, on its spawn spots a couple of seconds into the mission.
+- **Ally Orders**: Auto (Hunt in the destroy-all-enemies missions, Escort in the rest), Escort You (they stay with you, fight what comes near, and are brought up behind you if they fall far behind), or Hunt Enemies.
+- **Ally Skill**: Game, Veteran or Elite. Elite allies see about 2.5 times as far and shoot about 2.5 times as often as the game makes them; in a Truck Stop test they killed about three times as many enemies.
+- **Extra Enemies** (0-15), **Enemy Class**, **Enemy Orders**, **Enemy Skill**: AI tanks for the enemy, where its gang brings in its tanks.
 - **Remove Trains**: takes the trains out of every level.
 
-A class change starts with the next mission.
+Added tanks never come in on a train track. A class change starts with the next mission. Texas Slave Fortress hasn't been tested with Remove Trains.
 
 ### How to install
 1. Download `btga_gang_mod.nrm` below.

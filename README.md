@@ -33,13 +33,12 @@ In each campaign mission, the mod adds the tanks you pick in the Mods menu:
 - **Extra Enemies** (0-15): AI tanks in the enemy gang. They come in when the
   first enemy tank shows up, at the spot its gang brings in its tanks (or next
   to it).
-- **Enemy Skill**: Game (default), Veteran or Elite, for the extra enemies
-  only.
 - **Enemy Class**: Random, Same as Theirs, or any of the 11 tank classes.
 - **Enemy Orders**: Same as Theirs (what the mission's own tanks from that
   spot do, or Hunt if those just wait) or Hunt (they come after you and your
   allies).
-
+- **Enemy Skill**: Game (default), Veteran or Elite, for the extra enemies
+  only. The mission's own enemies are left as they are.
 - **Remove Trains** (Off/On): takes the trains and their cars out of every
   level (Truck Stop, Texas Slave Fortress, the Railyard map and so on), about
   a second after the level starts.
@@ -66,6 +65,11 @@ them again.
   tanks, so in a crowded mission you can get fewer than you asked for.
 - The arrows over tanks (and their marks on the map) only show while your
   own tank has radar, for the mission's tanks and the added ones alike.
+- Remove Trains was tested in Truck Stop. Texas Slave Fortress has a slave
+  train too and wasn't tested; if its prisoners turn out to ride the train,
+  that mission can't be finished with the option on.
+- Tested in SF Airport, SF Breakout and Truck Stop; the other missions only
+  through the same code paths. Reports welcome in the Issues.
 - Missions only. Other modes (Tank Wars, Battlelord and the rest) are left
   alone.
 
@@ -90,8 +94,10 @@ builds it too (see the Build action's Artifacts). Pushing a new `version` in
 ## Files
 | File | What it is |
 |---|---|
-| `src/main.c` | The mod. |
+| `src/main.c` | Adding the tanks, their orders, escort and skill. |
+| `src/trains.c` | Remove Trains, and finding the train tracks. |
 | `include/btga.h` | Game addresses and functions the mod uses. |
+| `syms/battletanxga.us.rev0.syms.toml` | The game's function list (from btgarecomp). |
 | `NOTES.md` | How the game makes tanks, and where each address comes from. |
 | `mod.toml` | Mod info and the Mods menu options. |
 | `thumb.png` | The picture in the Mods menu. |

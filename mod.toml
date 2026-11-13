@@ -4,17 +4,19 @@
 
 id = "btga_gang_mod"
 
-version = "0.1.7"
+version = "1.0.0"
 
 # Shown in the Mods menu.
 display_name = "Gang Mod: Extra Tanks"
 description = """
 More friendly and enemy tanks in every campaign mission. \
-Pick how many to add to each side, and what class of tank, in this mod's options.
-
-Allies join your gang next to you a couple of seconds into the mission. \
-Enemies join the first enemy gang that shows up, where it brings in its tanks. \
+Pick how many to add to each side, their class, what they do and how good they are, in this mod's options. \
 They're the game's own AI tanks.
+
+Allies join your gang on its spawn spots a couple of seconds into the mission, \
+and hunt the enemy or escort you. \
+Enemies join the first enemy gang that shows up, where it brings in its tanks. \
+Also: an option to take the trains out of every level.
 
 https://github.com/wootbeer/btgarecomp-gang-mod"""
 short_description = "More ally and enemy tanks in the campaign."
@@ -42,8 +44,9 @@ data_reference_syms_files = []
 additional_files = [ "thumb.png" ]
 
 # Options shown in the Mods menu. Read them with recomp_get_config_u32.
-# Class choices: Random, the mission's own (or yours, for allies), then the
-# tanks in the game's order. src/main.c relies on this order.
+# The order of each Enum's options matters: src/main.c reads the option's
+# index. Class choices: Random, the mission's own (or yours, for allies),
+# then the tanks in the game's order.
 
 [[manifest.config_options]]
 id = "ally_count"
@@ -110,17 +113,17 @@ options = [ "Same as Theirs", "Hunt" ]
 default = "Same as Theirs"
 
 [[manifest.config_options]]
-id = "remove_trains"
-name = "Remove Trains"
-description = "Takes the trains out of every level (Truck Stop, Texas Slave Fortress, the Railyard and so on), a second after the level starts."
-type = "Enum"
-options = [ "Off", "On" ]
-default = "Off"
-
-[[manifest.config_options]]
 id = "enemy_skill"
 name = "Enemy Skill"
 description = "How good the extra enemies are (the mission's own enemies are left as they are). Game: as the game makes them for their gang. Veteran: they see farther and shoot more often. Elite: the game's best AI level."
 type = "Enum"
 options = [ "Game", "Veteran", "Elite" ]
 default = "Game"
+
+[[manifest.config_options]]
+id = "remove_trains"
+name = "Remove Trains"
+description = "Takes the trains out of every level (Truck Stop, Texas Slave Fortress, the Railyard and so on), a second after the level starts."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "Off"

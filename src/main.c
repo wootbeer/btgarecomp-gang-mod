@@ -2,10 +2,13 @@
 //
 // In each campaign mission this adds the number of ally and enemy tanks
 // picked in the Mods menu, of the tank class picked for each side:
-// - Allies join your gang next to your tank a moment after the mission starts.
+// - Allies join your gang on its spawn spots a moment after the mission
+//   starts. They hunt the enemy or escort you (Ally Orders).
 // - Enemies join the first enemy gang that shows up, at that tank's
 //   generator (where its gang brings in new tanks), or next to it.
-// Both are the game's own AI tanks, made the way the game makes them.
+// Both are the game's own AI tanks, made the way the game makes them, with
+// their sight and rate of fire set by Ally Skill / Enemy Skill.
+// Remove Trains is in trains.c. NOTES.md has the game details behind it all.
 
 #include "modding.h"
 #include "recompconfig.h"
@@ -32,7 +35,6 @@
 #define RANDOM_MASK   ((1 << RANDOM_TYPES) - 1)
 
 typedef struct {
-    u8 started;     // this mission's spawning has begun
     u8 done;        // all added (or gave up)
     u8 made;        // tanks added so far
     u8 tries;       // spawn attempts without room
@@ -234,7 +236,6 @@ static u8* spawn_near(f32 cx, f32 cz, u16 heading, u8 layer, u8 gang, s32 type, 
 }
 
 static void reset_side(Side* s) {
-    s->started = 0;
     s->done = 0;
     s->made = 0;
     s->tries = 0;
@@ -483,6 +484,8 @@ static void apply_skill(u8* tank, u32 level) {
 #define ORDERS_AUTO   0
 #define ORDERS_ESCORT 1
 #define ORDERS_HUNT   2
+// Enemy Orders: 0 Same as Theirs, 1 Hunt.
+#define ENEMY_ORDERS_HUNT 1
 
 // Auto: hunt in the levels whose goal is to destroy every enemy tank, escort
 // in the rest (get somewhere, rescue, protect, destroy a building). Level ids
@@ -523,7 +526,6 @@ static void step_side(Side* s, u32 wanted, s32 now, u8* ref, u32 class_option, s
     if (ref == NULL || now < s->next_time) {
         return;
     }
-    s->started = 1;
 
     if (tanks_in_use() >= BTGA_TANK_SLOTS - FREE_SLOTS_TO_KEEP) {
         s->tries++;
@@ -626,9 +628,7 @@ void gang_mod_on_frame(void) {
     if (player == NULL) {
         return;
     }
-    if (BTGA_GAME_MODE == BTGA_MODE_CAMPAIGN && now >= START_DELAY) {
-        escorts_catch_up(now, player);
-    }
+    escorts_catch_up(now, player);
     rng_state ^= (u32)now;
 
     if (ally_count > 0) {
@@ -637,6 +637,6 @@ void gang_mod_on_frame(void) {
     }
     if (enemy_count > 0) {
         step_side(&enemies, enemy_count, now, find_enemy(TANK_GANG(player)), enemy_class, 1,
-                  enemy_orders == 1 ? AI_HUNT : -1, 0);
+                  enemy_orders == ENEMY_ORDERS_HUNT ? AI_HUNT : -1, 0);
     }
 }

@@ -15,17 +15,6 @@ typedef double f64;
 
 #define NULL ((void*)0)
 
-// Game variables we know about.
-// From btgarecomp's src/game/cheats.cpp (the Cheats tab uses them).
-
-// Tank Bucks. The GameShark code "Infinite Tank Bucks" (80236A9F 0064)
-// keeps this at 100.
-#define BTGA_TANK_BUCKS (*(volatile u8*)0x80236A9F)
-
-// Flags the game's own cheat codes turn on (1 = on).
-#define BTGA_CHEAT_INVINCIBILITY (*(volatile u8*)0x80125AB0) // HPPYHPPY
-#define BTGA_CHEAT_ALL_WEAPONS   (*(volatile u8*)0x80125AB1) // RCKTSRDGLR
-
 // ---------------------------------------------------------------------------
 // Tanks, gangs and missions. Found for this mod by reading the game's code
 // (USA 1.0); see NOTES.md for where each one comes from.
