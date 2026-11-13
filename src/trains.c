@@ -61,3 +61,32 @@ void trains_frame(void) {
     free_all(OBJ_TYPE_TRAIN_CAR);
     free_all(OBJ_TYPE_TRAIN);
 }
+
+// True when (x, z) is within `clearance` of any train's track.
+s32 near_train_track(f32 x, f32 z, f32 clearance) {
+    s16 idx = BTGA_OBJ_HEAD(OBJ_TYPE_TRAIN);
+    s32 guard = 0;
+    while (idx != -1 && guard++ < BTGA_OBJ_POOL) {
+        u8* t = BTGA_OBJ(idx);
+        f32 x0 = TRAIN_TRACK_X(t);
+        f32 z0 = TRAIN_TRACK_Z(t);
+        f32 len = TRAIN_TRACK_LENGTH(t);
+        f32 dx = func_8009D4B0(TRAIN_TRACK_ANGLE(t));
+        f32 dz = func_8009D510(TRAIN_TRACK_ANGLE(t));
+        // The nearest point of the track to (x, z).
+        f32 along = (x - x0) * dx + (z - z0) * dz;
+        if (along < -clearance) {
+            along = -clearance;
+        }
+        if (len > 0.0f && along > len + clearance) {
+            along = len + clearance;
+        }
+        f32 nx = x0 + dx * along - x;
+        f32 nz = z0 + dz * along - z;
+        if (nx * nx + nz * nz < clearance * clearance) {
+            return 1;
+        }
+        idx = OBJ_NEXT(t);
+    }
+    return 0;
+}

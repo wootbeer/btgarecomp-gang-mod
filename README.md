@@ -51,6 +51,8 @@ them again.
   mission's own class for that tank instead.
 - **Random** loads every ordinary tank class, as *All Tanks All Levels* does.
   That needs more memory. btgarecomp has had room for it since 0.1.4.
+- Added tanks never come in on or right beside a train track (within 150
+  units), so a train can't run into them.
 - The game has 24 tank slots. The mod always leaves 4 free for the game's own
   tanks, so in a crowded mission you can get fewer than you asked for.
 - The arrows over tanks (and their marks on the map) only show while your

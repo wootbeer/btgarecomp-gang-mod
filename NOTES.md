@@ -193,3 +193,18 @@ Crossfire). Ally Orders' Auto hunts in the "destroy all" levels (26, 1, 5, 8,
   put on a free spot (checked with `func_8008F4AC`) 500-900 behind the player,
   along the way the player has driven in the last second, with `+0x08..0x1C`,
   `+0x110/0x114` and `+0x150/0x154` set to the new place.
+
+## Train tracks
+Each train runs on a straight track: from (`+0x0C`, `+0x10`) along the angle
+at `+0x24` (u16) for `+0x14` units; a car's place is that line at its
+distance (`func_800EEADC`, with `func_8009D4B0` = sin and `func_8009D510` =
+cos of a 16-bit angle). Truck Stop: z = 72 (angle 0x4000) and z = 216
+(0xC000); the road is about 230 from the nearer one, the player gang's base
+spots 170-180. The mod refuses spawn spots within 150 of a track.
+
+## Mission allies vs the mod's (SF Airport, compared in the game)
+The whole 0x4CC-byte tank of a mission ally (M1A1 from a generator) and one
+of the mod's (M1A1, Hunt) differ only in what they're doing at the moment:
+`+0x30`/`+0x5C` (motion), `+0xAC` (who it can see), `+0xE8..0xEC` (an attack
+run, `func_80089040`), `+0x140`/`+0x14C` (driving), `+0x230`/`+0x238` (last
+hit). Their setup is the same: same gang, control, state, skill, weapons.

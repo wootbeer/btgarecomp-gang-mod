@@ -183,7 +183,15 @@ static u8* make_tank(f32 x, f32 z, u16 heading, u8 layer, u8 gang, s32 type, s32
     return (u8*)func_8008AE04(&spawn);
 }
 
+// Keep this far from train tracks (a car is about 100 wide, a tank about 100
+// long), so a train never runs into a new tank. Truck Stop: the road is about
+// 230 from the nearer track, the gang base spots 170-180.
+#define TRACK_CLEARANCE 150.0f
+
 static s32 spot_free(s32 type, f32 x, f32 z, u16 heading, u8 layer) {
+    if (near_train_track(x, z, TRACK_CLEARANCE)) {
+        return 0;
+    }
     return func_8008F4AC(type, (s32)x, (s32)z, heading, layer, 1, 0, 0) != 0;
 }
 

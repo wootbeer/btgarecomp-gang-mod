@@ -103,6 +103,17 @@ typedef double f64;
 #define OBJ_TYPE_TRAIN       1
 #define OBJ_TYPE_TRAIN_CAR   2
 #define TRAIN_SOUND(o)       (*(volatile s32*)((o) + 0x40)) // its engine sound, 0 = none
+// A train runs on a straight track: from (x, z) along the angle, for the
+// length; its cars sit at distances along it (func_800EEADC).
+#define TRAIN_TRACK_X(o)      (*(f32*)((o) + 0x0C))
+#define TRAIN_TRACK_Z(o)      (*(f32*)((o) + 0x10))
+#define TRAIN_TRACK_LENGTH(o) (*(f32*)((o) + 0x14))
+#define TRAIN_TRACK_ANGLE(o)  (*(u16*)((o) + 0x24))
+
+// sin and cos of a 16-bit angle (0x10000 = a full turn): the x and z of the
+// direction the game uses for that angle.
+f32 func_8009D4B0(s32 angle);
+f32 func_8009D510(s32 angle);
 
 // Stops a sound started with func_80097A6C.
 void func_80097BA4(s32 handle, s32 a1);
