@@ -69,6 +69,7 @@ typedef double f64;
 #define SPAWNER_Z(o)         (*(f32*)((o) + 0x10))
 #define SPAWNER_HEADING(o)   (*(u16*)((o) + 0x14))
 #define SPAWNER_LAYER(o)     (*(u8*)((o) + 0x16))
+#define SPAWNER_AI_STATE(o)  (*(u8*)((o) + 0x29)) // what its tanks do first
 
 // Tank types (index into the table at 0x80122E30, 0xD0 bytes each).
 enum {
@@ -88,6 +89,12 @@ enum {
 #define BTGA_LEVEL_COUNT 19
 #define BTGA_LEVEL_TANK_MASK(i) (*(volatile u16*)(0x80124B90 + 0x70 * (u32)(i) + 0x4A))
 
+// AI states (tank +0x168). A new AI tank drives clear of its spawn spot
+// (state 25), then goes to the state it was made with.
+#define AI_HOLD   4  // stop and stay put
+#define AI_FOLLOW 5  // follow the gang's leader (a human player), fighting what it meets
+#define AI_HUNT   6  // look for tanks of the other teams and attack them
+
 // What func_8008AE04 takes to make a tank.
 typedef struct {
     f32 x;          // 0x00
@@ -98,7 +105,7 @@ typedef struct {
     u8 gang;        // 0x0F
     s32 type;       // 0x10 tank type
     s32 control;    // 0x14 0 human, 1/2 AI
-    s32 ai_state;   // 0x18 first AI state; 4 = the normal one
+    s32 ai_state;   // 0x18 AI state once it has driven clear of its spawn spot (AI_*)
     u32 flags;      // 0x1C
     s32 weapon_a;   // 0x20
     s32 weapon_b;   // 0x24

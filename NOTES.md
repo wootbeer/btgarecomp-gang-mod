@@ -33,7 +33,7 @@ Takes a 0x2C-byte record (`TankSpawn` in `include/btga.h`):
 | `0x0F` | gang | `+0x95` |
 | `0x10` | tank type | `+0x98` |
 | `0x14` | control (0 human, 1/2 AI) | `+0x9C`, through `func_80089F40` |
-| `0x18` | first AI state. 7, 8, 14, 15, 16 start that state (`func_80086208`), anything else the normal one (state 0x19, `func_8008616C`) | |
+| `0x18` | AI state. 7, 8, 14, 15, 16 start right away (`func_80086208`). Anything else: the tank first drives clear of its spot (state 25, `func_80085C30` / `func_80085D58`), then goes to this state | `+0x18C`, then `+0x168` |
 | `0x1C` | flags, OR 1 | `+0x1E0` |
 | `0x20` / `0x24` | weapons, given with `func_8008ECB4` | |
 | `0x28` | tank generator, or NULL | `+0x4A0` |
@@ -88,3 +88,21 @@ Loaded models are at `0x803A53A0` by model id (NULL = not loaded,
   7 Tank Wars, 8 Convoy.
 - Level clock at `0x8021945C`, 30 per second, set to 0 at a level start
   (`func_80099FE8`).
+
+## AI states
+Tank `+0x168`. Entered through `func_80086208` (table at `0x800713F0`), run
+each frame through `func_80086560` (table at `0x80071470`).
+- 4 (`func_80082F98` / nothing): stop and stay put.
+- 5 (`func_80082FE8` / `func_80083028`): follow the gang's leader (the first
+  tank in the gang's human list, `gang +0x1B8`) within 400 units, or keep on
+  a target it has.
+- 6 (`func_800830B4` / `func_800830F8`): pick a target with `func_80088854`
+  (tanks of gangs whose `+0x10` team differs) and attack it; 0x13 or 0x15
+  (retreat) when hurt.
+- 25 (`func_80085C30` / `func_80085D58`): a new tank driving clear of its
+  spot, then the state in `+0x18C`.
+
+## Radar arrows
+`func_800C8B74` (from `0x80092468`) runs only while the viewing tank has
+radar (`+0x1E0` flag `0x200`), and lists every tank object (generic object
+type 4) on the viewer's layer (`+0x94`).

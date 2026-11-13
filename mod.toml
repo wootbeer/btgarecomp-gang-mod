@@ -4,7 +4,7 @@
 
 id = "btga_gang_mod"
 
-version = "0.1.0"
+version = "0.1.1"
 
 # Shown in the Mods menu.
 display_name = "Gang Mod: Extra Tanks"
@@ -66,6 +66,14 @@ options = [ "Random", "Same as Yours", "M1A1", "Mototank", "Goliath", "FLP-E Tan
 default = "Random"
 
 [[manifest.config_options]]
+id = "ally_orders"
+name = "Ally Orders"
+description = "What the extra allies do. Follow You: they stay with you and fight what they meet. Hunt Enemies: they go after the enemy on their own."
+type = "Enum"
+options = [ "Follow You", "Hunt Enemies" ]
+default = "Follow You"
+
+[[manifest.config_options]]
 id = "enemy_count"
 name = "Extra Enemies"
 description = "How many AI tanks to add to the enemy in each campaign mission. They come in when the first enemy tank shows up."
@@ -84,3 +92,11 @@ description = "The class of the extra enemies. Random picks a different one for 
 type = "Enum"
 options = [ "Random", "Same as Theirs", "M1A1", "Mototank", "Goliath", "FLP-E Tank", "Hovertank", "Rattler", "Rhino", "M-2 Hydra", "Inferno", "Marksman", "Hornet" ]
 default = "Random"
+
+[[manifest.config_options]]
+id = "enemy_orders"
+name = "Enemy Orders"
+description = "What the extra enemies do. Same as Theirs: what the mission's own enemy tanks there do (or Hunt, if those just wait). Hunt: they come after you and your allies."
+type = "Enum"
+options = [ "Same as Theirs", "Hunt" ]
+default = "Same as Theirs"

@@ -163,7 +163,7 @@ static u16 class_mask(u32 option) {
 }
 
 // Makes one AI tank of `gang` near (cx, cz). Returns 1 if it made one.
-static s32 spawn_near(f32 cx, f32 cz, u16 heading, u8 layer, u8 gang, s32 type) {
+static s32 spawn_near(f32 cx, f32 cz, u16 heading, u8 layer, u8 gang, s32 type, s32 ai_state) {
     u8* g = BTGA_GANG(gang);
     // Start the search in a random direction, so the tanks don't all line
     // up on the same side.
@@ -188,7 +188,7 @@ static s32 spawn_near(f32 cx, f32 cz, u16 heading, u8 layer, u8 gang, s32 type) 
             spawn.type = type;
             // The game's tank generators use 2 for gangs with flag 2, else 1.
             spawn.control = (GANG_FLAGS(g) & 2) ? 2 : 1;
-            spawn.ai_state = 4;
+            spawn.ai_state = ai_state;
             spawn.flags = 0;
             spawn.weapon_a = GANG_WEAPON_A(g);
             spawn.weapon_b = GANG_WEAPON_B(g);
@@ -208,7 +208,9 @@ static void reset_side(Side* s) {
 }
 
 // One step of a side: makes at most one tank. `wanted` is how many to add.
-static void step_side(Side* s, u32 wanted, s32 now, u8* ref, u32 class_option, s32 use_spawner) {
+// `ai_state` < 0: take it from the reference tank's generator (enemies),
+// or hunt if it has none.
+static void step_side(Side* s, u32 wanted, s32 now, u8* ref, u32 class_option, s32 use_spawner, s32 ai_state) {
     if (s->done) {
         return;
     }
@@ -238,11 +240,21 @@ static void step_side(Side* s, u32 wanted, s32 now, u8* ref, u32 class_option, s
             cz = SPAWNER_Z(spawner);
             heading = SPAWNER_HEADING(spawner);
             layer = SPAWNER_LAYER(spawner);
+            if (ai_state < 0) {
+                ai_state = SPAWNER_AI_STATE(spawner);
+                // Standing still (0, 4) or no state at all: hunt instead.
+                if (ai_state == 0 || ai_state == AI_HOLD || ai_state >= 31) {
+                    ai_state = AI_HUNT;
+                }
+            }
         }
+    }
+    if (ai_state < 0) {
+        ai_state = AI_HUNT;
     }
 
     s32 type = pick_type(class_option, TANK_TYPE(ref));
-    if (spawn_near(cx, cz, heading, layer, TANK_GANG(ref), type)) {
+    if (spawn_near(cx, cz, heading, layer, TANK_GANG(ref), type, ai_state)) {
         s->made++;
         s->tries = 0;
     } else {
@@ -258,6 +270,8 @@ void gang_mod_on_frame(void) {
     u32 ally_class = recomp_get_config_u32("ally_class");
     u32 enemy_count = recomp_get_config_u32("enemy_count");
     u32 enemy_class = recomp_get_config_u32("enemy_class");
+    u32 ally_orders = recomp_get_config_u32("ally_orders");
+    u32 enemy_orders = recomp_get_config_u32("enemy_orders");
 
     // Make the levels load the models of the classes picked (the same
     // place the "All Tanks All Levels" code writes). Only adds bits.
@@ -296,9 +310,11 @@ void gang_mod_on_frame(void) {
     rng_state ^= (u32)now;
 
     if (ally_count > 0) {
-        step_side(&allies, ally_count, now, player, ally_class, 0);
+        step_side(&allies, ally_count, now, player, ally_class, 0,
+                  ally_orders == 1 ? AI_HUNT : AI_FOLLOW);
     }
     if (enemy_count > 0) {
-        step_side(&enemies, enemy_count, now, find_enemy(TANK_GANG(player)), enemy_class, 1);
+        step_side(&enemies, enemy_count, now, find_enemy(TANK_GANG(player)), enemy_class, 1,
+                  enemy_orders == 1 ? AI_HUNT : -1);
     }
 }

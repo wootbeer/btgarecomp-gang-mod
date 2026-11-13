@@ -11,10 +11,15 @@ In each campaign mission, the mod adds the tanks you pick in the Mods menu:
 - **Extra Allies** (0-10): AI tanks in your gang. They show up next to you
   about two seconds into the mission.
 - **Ally Class**: Random, Same as Yours, or any of the 11 tank classes.
+- **Ally Orders**: Follow You (they stay with you and fight what they meet)
+  or Hunt Enemies (they go after the enemy on their own).
 - **Extra Enemies** (0-15): AI tanks in the enemy gang. They come in when the
   first enemy tank shows up, at the spot its gang brings in its tanks (or next
   to it).
 - **Enemy Class**: Random, Same as Theirs, or any of the 11 tank classes.
+- **Enemy Orders**: Same as Theirs (what the mission's own tanks from that
+  spot do, or Hunt if those just wait) or Hunt (they come after you and your
+  allies).
 
 The classes are M1A1, Mototank, Goliath, FLP-E Tank, Hovertank, Rattler,
 Rhino, M-2 Hydra, Inferno, Marksman and Hornet. The Attack Boat and the boss
@@ -34,6 +39,8 @@ them again.
   That needs more memory. btgarecomp has had room for it since 0.1.4.
 - The game has 24 tank slots. The mod always leaves 4 free for the game's own
   tanks, so in a crowded mission you can get fewer than you asked for.
+- The arrows over tanks (and their marks on the map) only show while your
+  own tank has radar, for the mission's tanks and the added ones alike.
 - Missions only. Other modes (Tank Wars, Battlelord and the rest) are left
   alone.
 
