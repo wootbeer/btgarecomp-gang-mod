@@ -55,10 +55,17 @@ typedef double f64;
 #define TANK_HEALTH(t)   (*(s32*)((t) + 0x1D4))
 #define TANK_FLAGS(t)    (*(u32*)((t) + 0x1E0)) // bit 0: slot in use
 #define TANK_SPAWNER(t)  (*(u8**)((t) + 0x4A0)) // the tank generator that made it, or NULL
+#define TANK_GANG_PTR(t) (*(u8**)((t) + 0x1D0))
+#define TANK_AI_STATE(t) (*(s32*)((t) + 0x168))
+#define TANK_AI_RANGE(t) (*(f32*)((t) + 0x1C0)) // how close it gets to attack
+#define TANK_AI_ATTACK(t) (*(u8*)((t) + 0xC4))  // 1: the target is to be attacked
+#define TANK_AI_HAS_TARGET(t) (*(u8*)((t) + 0xC5))
+#define TANK_AI_TARGET(t) (*(u8**)((t) + 0xC8))
 
 // Gangs: 0x250 bytes each.
 #define BTGA_GANG(i)        ((u8*)(0x80235F00 + 0x250 * (u32)(i)))
 #define GANG_FLAGS(g)       (*(u8*)((g) + 0x0A))
+#define GANG_TEAM(g)        (*(u32*)((g) + 0x10)) // gangs with the same team are allies
 #define GANG_WEAPON_A(g)    (*(s32*)((g) + 0x1F4))
 #define GANG_WEAPON_B(g)    (*(s32*)((g) + 0x1F8))
 
@@ -114,6 +121,11 @@ typedef struct {
 
 // Makes a tank. Returns the tank object, or NULL when there's no free slot.
 void* func_8008AE04(TankSpawn* spawn);
+
+// Gives an AI tank a tank to go to: within `range`, and attacking it if
+// `attack`. In state 5 (follow) the tank keeps to it while it's alive,
+// then goes back to its gang's leader.
+void func_80088ABC(void* tank, void* target, f32 range, s32 attack);
 
 // Nonzero when a tank of this type fits at (x, z): on the map, on the
 // ground, and clear of other tanks and objects.

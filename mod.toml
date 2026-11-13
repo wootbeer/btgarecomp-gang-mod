@@ -4,7 +4,7 @@
 
 id = "btga_gang_mod"
 
-version = "0.1.1"
+version = "0.1.2"
 
 # Shown in the Mods menu.
 display_name = "Gang Mod: Extra Tanks"
@@ -68,10 +68,10 @@ default = "Random"
 [[manifest.config_options]]
 id = "ally_orders"
 name = "Ally Orders"
-description = "What the extra allies do. Follow You: they stay with you and fight what they meet. Hunt Enemies: they go after the enemy on their own."
+description = "What the extra allies do. Escort You: they stay with you and attack enemies that come near you or them. Hunt Enemies: they go after the enemy on their own, like the mission's own allies."
 type = "Enum"
-options = [ "Follow You", "Hunt Enemies" ]
-default = "Follow You"
+options = [ "Escort You", "Hunt Enemies" ]
+default = "Escort You"
 
 [[manifest.config_options]]
 id = "enemy_count"

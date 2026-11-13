@@ -92,13 +92,19 @@ Loaded models are at `0x803A53A0` by model id (NULL = not loaded,
 ## AI states
 Tank `+0x168`. Entered through `func_80086208` (table at `0x800713F0`), run
 each frame through `func_80086560` (table at `0x80071470`).
-- 4 (`func_80082F98` / nothing): stop and stay put.
+- 4 (`func_80082F98` / nothing): stop and stay put. Human tanks sit here.
 - 5 (`func_80082FE8` / `func_80083028`): follow the gang's leader (the first
   tank in the gang's human list, `gang +0x1B8`) within 400 units, or keep on
-  a target it has.
-- 6 (`func_800830B4` / `func_800830F8`): pick a target with `func_80088854`
-  (tanks of gangs whose `+0x10` team differs) and attack it; 0x13 or 0x15
-  (retreat) when hurt.
+  a target it has. Seen in the game: tanks in this state barely move or fight
+  (their `+0x170` stays 1 from the drive-out). The game's own allies don't
+  use it.
+- 6 (`func_800830B4` / `func_800830F8`): every frame, pick a target with
+  `func_80088854` and attack it; 0x13 or 0x15 (retreat) when hurt. The target
+  is kept only if it's a human tank (`+0x1E0` bit 2) of another team;
+  otherwise it takes the first live tank of the first gang (of 5) with another
+  team (`func_800A9928` walks the gang's lists in order), wherever it is on
+  the map. This is what the missions' own allies run (SF Airport: three M1A1s
+  in your gang, control 2, state 6).
 - 25 (`func_80085C30` / `func_80085D58`): a new tank driving clear of its
   spot, then the state in `+0x18C`.
 
@@ -106,3 +112,23 @@ each frame through `func_80086560` (table at `0x80071470`).
 `func_800C8B74` (from `0x80092468`) runs only while the viewing tank has
 radar (`+0x1E0` flag `0x200`), and lists every tank object (generic object
 type 4) on the viewer's layer (`+0x94`).
+
+## AI targets
+- `+0xC4` attack (1) or just go there (0), `+0xC5` target kind (1 a tank in
+  `+0xC8`; 2 a point in `+0xC8`/`+0xCC`; 3 a waypoint object), `+0xB4` how
+  close to get (f32), `+0xC0` give-up time.
+- `func_80088ABC(tank, target, range, attack)` sets a tank target (kind 1).
+  `func_80088B6C(tank, point, range, attack)` sets a point.
+- The driving code (`func_8007E64C`) heads for `func_8008865C`'s goal: for a
+  tank target, that tank's `+0x150`/`+0x154` (its position, kept up to date
+  for human and AI tanks alike).
+- The mod's Escort hooks `func_80088854` (before, to note the tank; after, to
+  replace its pick): the nearest enemy within 1600 of you (or of the escort,
+  if within 2600 of you), attacked at the tank's `+0x1C0` range; with none,
+  you, at 400, not attacked.
+
+## Watched in the game (local build, SF Airport and Alcatraz)
+- Mission 1 can start your tank without radar (`+0x1E0` 0x003) or with it
+  (0x203), so the arrows aren't always there.
+- With Escort, the allies go out to enemies that come near, kill them, and
+  come back to you.

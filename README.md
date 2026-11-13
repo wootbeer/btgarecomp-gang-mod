@@ -11,8 +11,9 @@ In each campaign mission, the mod adds the tanks you pick in the Mods menu:
 - **Extra Allies** (0-10): AI tanks in your gang. They show up next to you
   about two seconds into the mission.
 - **Ally Class**: Random, Same as Yours, or any of the 11 tank classes.
-- **Ally Orders**: Follow You (they stay with you and fight what they meet)
-  or Hunt Enemies (they go after the enemy on their own).
+- **Ally Orders**: Escort You (they stay with you and attack enemies that
+  come near you or them, then come back) or Hunt Enemies (they go after the
+  enemy on their own, like the mission's own allies).
 - **Extra Enemies** (0-15): AI tanks in the enemy gang. They come in when the
   first enemy tank shows up, at the spot its gang brings in its tanks (or next
   to it).

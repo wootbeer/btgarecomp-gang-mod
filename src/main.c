@@ -162,8 +162,8 @@ static u16 class_mask(u32 option) {
     return 0;
 }
 
-// Makes one AI tank of `gang` near (cx, cz). Returns 1 if it made one.
-static s32 spawn_near(f32 cx, f32 cz, u16 heading, u8 layer, u8 gang, s32 type, s32 ai_state) {
+// Makes one AI tank of `gang` near (cx, cz). Returns it, or NULL.
+static u8* spawn_near(f32 cx, f32 cz, u16 heading, u8 layer, u8 gang, s32 type, s32 ai_state) {
     u8* g = BTGA_GANG(gang);
     // Start the search in a random direction, so the tanks don't all line
     // up on the same side.
@@ -193,10 +193,10 @@ static s32 spawn_near(f32 cx, f32 cz, u16 heading, u8 layer, u8 gang, s32 type, 
             spawn.weapon_a = GANG_WEAPON_A(g);
             spawn.weapon_b = GANG_WEAPON_B(g);
             spawn.spawner = NULL;
-            return func_8008AE04(&spawn) != NULL;
+            return (u8*)func_8008AE04(&spawn);
         }
     }
-    return 0;
+    return NULL;
 }
 
 static void reset_side(Side* s) {
@@ -207,10 +207,121 @@ static void reset_side(Side* s) {
     s->next_time = 0;
 }
 
+// --- Escort: allies that stay with you and fight what comes near. ---
+// They run the game's own hunt state (6), like the mission's allies, so they
+// drive and shoot the same way. That state picks its target every frame
+// (func_80088854), normally the first tank of the first enemy gang, wherever
+// it is. Right after it does, the mod picks instead: the nearest enemy close
+// to you or to the escort, or, with none near, you (to follow, not attack).
+
+#define MAX_ESCORTS   16
+#define ENGAGE_DIST   1600.0f   // enemies this close to you or an escort get attacked
+#define LEASH_DIST    2600.0f   // never chase a target this far from you
+#define FOLLOW_RANGE  400.0f    // how close they keep to you (the game's own follow value)
+
+static u8* escorts[MAX_ESCORTS];
+static s32 escort_count = 0;
+static u8* escort_player = NULL;  // your tank this frame, or NULL
+static u8* picking_for = NULL;    // the escort func_80088854 is running for
+
+static f32 dist2(u8* a, u8* b) {
+    f32 dx = TANK_X(a) - TANK_X(b);
+    f32 dz = TANK_Z(a) - TANK_Z(b);
+    return dx * dx + dz * dz;
+}
+
+static s32 is_enemy_of(u8* t, u8* me) {
+    if (t == me || !tank_alive(t) || (TANK_FLAGS(t) & 0x80)) {
+        return 0;
+    }
+    if (TANK_CONTROL(t) > 3 || TANK_LAYER(t) != TANK_LAYER(me)) {
+        return 0;
+    }
+    u8* g = TANK_GANG_PTR(t);
+    u8* mg = TANK_GANG_PTR(me);
+    if (g == NULL || mg == NULL) {
+        return 0;
+    }
+    return GANG_TEAM(g) != GANG_TEAM(mg);
+}
+
+// The nearest enemy of `me` within `max_dist` of `from`.
+static u8* nearest_enemy(u8* me, u8* from, f32 max_dist) {
+    u8* best = NULL;
+    f32 best_d = max_dist * max_dist;
+    for (s32 i = 0; i < BTGA_TANK_SLOTS; i++) {
+        u8* t = tank_slot(i);
+        if (!is_enemy_of(t, me)) {
+            continue;
+        }
+        f32 d = dist2(t, from);
+        if (d < best_d) {
+            best_d = d;
+            best = t;
+        }
+    }
+    return best;
+}
+
+static s32 escort_index(u8* t) {
+    for (s32 i = 0; i < escort_count; i++) {
+        if (escorts[i] == t) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// Drops escorts that are gone (or whose slot now holds another tank).
+static void escorts_tidy(void) {
+    for (s32 i = 0; i < escort_count; i++) {
+        u8* e = escorts[i];
+        s32 control = TANK_CONTROL(e);
+        if (!tank_alive(e) || (control != 1 && control != 2)) {
+            escorts[i] = escorts[--escort_count];
+            i--;
+        }
+    }
+}
+
+RECOMP_HOOK("func_80088854")
+void gang_mod_pick_target_start(u8* tank) {
+    picking_for = (escort_count > 0 && escort_index(tank) >= 0) ? tank : NULL;
+}
+
+RECOMP_HOOK_RETURN("func_80088854")
+void gang_mod_pick_target_end(void) {
+    u8* e = picking_for;
+    u8* player = escort_player;
+    picking_for = NULL;
+    if (e == NULL || player == NULL || !tank_alive(e) || TANK_AI_STATE(e) != AI_HUNT ||
+        TANK_GANG(e) != TANK_GANG(player)) {
+        return;
+    }
+
+    u8* target = nearest_enemy(e, player, ENGAGE_DIST);
+    if (target == NULL) {
+        target = nearest_enemy(e, e, ENGAGE_DIST);
+        if (target != NULL && dist2(target, player) > LEASH_DIST * LEASH_DIST) {
+            target = NULL;
+        }
+    }
+
+    if (target != NULL) {
+        f32 range = TANK_AI_RANGE(e);
+        if (!(range > 50.0f && range < 5000.0f)) {
+            range = 700.0f;
+        }
+        func_80088ABC(e, target, range, 1);
+    } else if (!(TANK_AI_HAS_TARGET(e) && TANK_AI_TARGET(e) == player && !TANK_AI_ATTACK(e))) {
+        func_80088ABC(e, player, FOLLOW_RANGE, 0);
+    }
+}
+
 // One step of a side: makes at most one tank. `wanted` is how many to add.
 // `ai_state` < 0: take it from the reference tank's generator (enemies),
 // or hunt if it has none.
-static void step_side(Side* s, u32 wanted, s32 now, u8* ref, u32 class_option, s32 use_spawner, s32 ai_state) {
+static void step_side(Side* s, u32 wanted, s32 now, u8* ref, u32 class_option, s32 use_spawner, s32 ai_state, s32 escorting) {
     if (s->done) {
         return;
     }
@@ -254,9 +365,13 @@ static void step_side(Side* s, u32 wanted, s32 now, u8* ref, u32 class_option, s
     }
 
     s32 type = pick_type(class_option, TANK_TYPE(ref));
-    if (spawn_near(cx, cz, heading, layer, TANK_GANG(ref), type, ai_state)) {
+    u8* tank = spawn_near(cx, cz, heading, layer, TANK_GANG(ref), type, ai_state);
+    if (tank != NULL) {
         s->made++;
         s->tries = 0;
+        if (s == &allies && escorting && escort_count < MAX_ESCORTS) {
+            escorts[escort_count++] = tank;
+        }
     } else {
         s->tries++;
     }
@@ -296,6 +411,7 @@ void gang_mod_on_frame(void) {
     if (now < last_time) {
         reset_side(&allies);
         reset_side(&enemies);
+        escort_count = 0;
     }
     last_time = now;
 
@@ -304,17 +420,19 @@ void gang_mod_on_frame(void) {
     }
 
     u8* player = find_player();
+    escort_player = player;
+    escorts_tidy();
     if (player == NULL) {
         return;
     }
     rng_state ^= (u32)now;
 
     if (ally_count > 0) {
-        step_side(&allies, ally_count, now, player, ally_class, 0,
-                  ally_orders == 1 ? AI_HUNT : AI_FOLLOW);
+        // Both orders use the hunt state; Escort picks its targets (above).
+        step_side(&allies, ally_count, now, player, ally_class, 0, AI_HUNT, ally_orders == 0);
     }
     if (enemy_count > 0) {
         step_side(&enemies, enemy_count, now, find_enemy(TANK_GANG(player)), enemy_class, 1,
-                  enemy_orders == 1 ? AI_HUNT : -1);
+                  enemy_orders == 1 ? AI_HUNT : -1, 0);
     }
 }
