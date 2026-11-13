@@ -8,8 +8,9 @@ Made from the [mod template](https://github.com/wootbeer/btgarecomp-mod-template
 ## What it does
 In each campaign mission, the mod adds the tanks you pick in the Mods menu:
 
-- **Extra Allies** (0-10): AI tanks in your gang. They show up next to you
-  about two seconds into the mission.
+- **Extra Allies** (0-10): AI tanks in your gang. They come in on your
+  gang's spawn spots (where your own tank does) about two seconds into the
+  mission.
 - **Ally Class**: Random, Same as Yours, or any of the 11 tank classes.
 - **Ally Orders**:
   - **Auto** (default): Hunt in missions where the goal is to destroy all the
@@ -17,7 +18,9 @@ In each campaign mission, the mod adds the tanks you pick in the Mods menu:
     Elysee, Assault on SF, Shore Patrol), Escort in the rest (get somewhere,
     rescue, protect or escort, destroy a target).
   - **Escort You**: they stay with you and attack enemies that come near you
-    or them, then come back.
+    or them, then come back. The game's AI can't keep up with you at full
+    speed, so an escort more than about 3000 units behind (far into the fog)
+    is moved up behind you.
   - **Hunt Enemies**: they go after the enemy on their own, like the
     mission's own allies.
 - **Extra Enemies** (0-15): AI tanks in the enemy gang. They come in when the

@@ -183,3 +183,13 @@ Crossfire). Ally Orders' Auto hunts in the "destroy all" levels (26, 1, 5, 8,
   level steps have the level id at `+0x04`), the current one at `0x803A8310`.
   Setting it (and `0x8021949C`) then choosing Restart in the pause menu loads
   that level: SF Airport is step 3, SF Breakout 5, Truck Stop 7.
+
+## Ally spawning and catch-up (watched in Truck Stop)
+- Spawned around the player, some allies landed behind the road barriers and
+  never moved. A gang's base spots (`gang +0x1E8`: 5 of 12 bytes, x, z,
+  heading, layer; `func_800A9080` uses them for the gang's own tanks) are
+  always drivable, so allies now come in there.
+- At full speed the player outruns the AI. Escorts more than 3000 away are
+  put on a free spot (checked with `func_8008F4AC`) 500-900 behind the player,
+  along the way the player has driven in the last second, with `+0x08..0x1C`,
+  `+0x110/0x114` and `+0x150/0x154` set to the new place.

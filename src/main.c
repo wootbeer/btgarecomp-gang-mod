@@ -163,9 +163,51 @@ static u16 class_mask(u32 option) {
     return 0;
 }
 
+static u8* make_tank(f32 x, f32 z, u16 heading, u8 layer, u8 gang, s32 type, s32 ai_state) {
+    u8* g = BTGA_GANG(gang);
+    TankSpawn spawn;
+    spawn.x = x;
+    spawn.z = z;
+    spawn.y = 0.0f;
+    spawn.heading = heading;
+    spawn.layer = layer;
+    spawn.gang = gang;
+    spawn.type = type;
+    // The game's tank generators use 2 for gangs with flag 2, else 1.
+    spawn.control = (GANG_FLAGS(g) & 2) ? 2 : 1;
+    spawn.ai_state = ai_state;
+    spawn.flags = 0;
+    spawn.weapon_a = GANG_WEAPON_A(g);
+    spawn.weapon_b = GANG_WEAPON_B(g);
+    spawn.spawner = NULL;
+    return (u8*)func_8008AE04(&spawn);
+}
+
+static s32 spot_free(s32 type, f32 x, f32 z, u16 heading, u8 layer) {
+    return func_8008F4AC(type, (s32)x, (s32)z, heading, layer, 1, 0, 0) != 0;
+}
+
+// Makes one AI tank of `gang` at one of the gang's base spots (where the
+// game brings in that gang's own tanks, so they can drive out from there).
+// Returns it, or NULL if none is free.
+static u8* spawn_at_base(u8 gang, s32 type, s32 ai_state) {
+    u8* spots = GANG_BASE_SPOTS(BTGA_GANG(gang));
+    if ((u32)spots < 0x80000000u || (u32)spots >= 0x80800000u) {
+        return NULL;
+    }
+    // Spot 0 is where your own tank comes in: try it last.
+    for (s32 k = 1; k <= GANG_BASE_SPOT_COUNT; k++) {
+        u8* sp = spots + BASE_SPOT_SIZE * (k % GANG_BASE_SPOT_COUNT);
+        if (spot_free(type, BASE_SPOT_X(sp), BASE_SPOT_Z(sp), BASE_SPOT_HEADING(sp), BASE_SPOT_LAYER(sp))) {
+            return make_tank(BASE_SPOT_X(sp), BASE_SPOT_Z(sp), BASE_SPOT_HEADING(sp), BASE_SPOT_LAYER(sp),
+                             gang, type, ai_state);
+        }
+    }
+    return NULL;
+}
+
 // Makes one AI tank of `gang` near (cx, cz). Returns it, or NULL.
 static u8* spawn_near(f32 cx, f32 cz, u16 heading, u8 layer, u8 gang, s32 type, s32 ai_state) {
-    u8* g = BTGA_GANG(gang);
     // Start the search in a random direction, so the tanks don't all line
     // up on the same side.
     s32 start = (s32)(rng_next() & 7);
@@ -175,26 +217,9 @@ static u8* spawn_near(f32 cx, f32 cz, u16 heading, u8 layer, u8 gang, s32 type, 
             s32 dir = (start + k) & 7;
             f32 x = cx + ring_dir[dir][0] * ring_dist[d];
             f32 z = cz + ring_dir[dir][1] * ring_dist[d];
-            if (!func_8008F4AC(type, (s32)x, (s32)z, heading, layer, 1, 0, 0)) {
-                continue;
+            if (spot_free(type, x, z, heading, layer)) {
+                return make_tank(x, z, heading, layer, gang, type, ai_state);
             }
-
-            TankSpawn spawn;
-            spawn.x = x;
-            spawn.z = z;
-            spawn.y = 0.0f;
-            spawn.heading = heading;
-            spawn.layer = layer;
-            spawn.gang = gang;
-            spawn.type = type;
-            // The game's tank generators use 2 for gangs with flag 2, else 1.
-            spawn.control = (GANG_FLAGS(g) & 2) ? 2 : 1;
-            spawn.ai_state = ai_state;
-            spawn.flags = 0;
-            spawn.weapon_a = GANG_WEAPON_A(g);
-            spawn.weapon_b = GANG_WEAPON_B(g);
-            spawn.spawner = NULL;
-            return (u8*)func_8008AE04(&spawn);
         }
     }
     return NULL;
@@ -281,6 +306,89 @@ static void escorts_tidy(void) {
         if (!tank_alive(e) || (control != 1 && control != 2)) {
             escorts[i] = escorts[--escort_count];
             i--;
+        }
+    }
+}
+
+// --- Catch-up: the game's AI can't keep up with you at full speed, and can
+// get stuck on the scenery. An escort more than CATCHUP_DIST away (far into
+// the fog) is moved to a free spot behind you, the way you're driving.
+#define CATCHUP_DIST  3000.0f
+#define CATCHUP_EVERY 30         // check once a second (1/30 s)
+
+static s32 catchup_next_time = 0;
+static f32 player_last_x = 0.0f;
+static f32 player_last_z = 0.0f;
+
+static f32 approx_len(f32 x, f32 z) {
+    // Good enough for a direction: max + half min.
+    f32 ax = x < 0 ? -x : x;
+    f32 az = z < 0 ? -z : z;
+    return ax > az ? ax + az * 0.5f : az + ax * 0.5f;
+}
+
+static void escort_move_to(u8* e, u8* player, f32 x, f32 z) {
+    TANK_X(e) = x;
+    TANK_Z(e) = z;
+    TANK_Y(e) = TANK_Y(player);
+    TANK_PREV_X(e) = x;
+    TANK_PREV_Z(e) = z;
+    TANK_PREV_Y(e) = TANK_Y(player);
+    TANK_NAV_X(e) = x;
+    TANK_NAV_Z(e) = z;
+    TANK_PLAN_X(e) = x;
+    TANK_PLAN_Z(e) = z;
+    TANK_HEADING(e) = TANK_HEADING(player);
+    func_80088ABC(e, player, FOLLOW_RANGE, 0);
+}
+
+static void escorts_catch_up(s32 now, u8* player) {
+    if (now < catchup_next_time) {
+        return;
+    }
+    catchup_next_time = now + CATCHUP_EVERY;
+
+    f32 px = TANK_X(player);
+    f32 pz = TANK_Z(player);
+    // Which way you're going: from where you were a second ago.
+    f32 dx = px - player_last_x;
+    f32 dz = pz - player_last_z;
+    player_last_x = px;
+    player_last_z = pz;
+    f32 len = approx_len(dx, dz);
+    if (len < 20.0f) {
+        dx = 0.0f;
+        dz = 0.0f;
+    } else {
+        dx /= len;
+        dz /= len;
+    }
+
+    for (s32 i = 0; i < escort_count; i++) {
+        u8* e = escorts[i];
+        if (!tank_alive(e) || dist2(e, player) < CATCHUP_DIST * CATCHUP_DIST) {
+            continue;
+        }
+        s32 type = TANK_TYPE(e);
+        u8 layer = TANK_LAYER(player);
+        u16 heading = TANK_HEADING(player);
+        s32 done = 0;
+        // Behind you first (then to the sides), a little farther each time.
+        static const f32 back[] = { 500.0f, 700.0f, 900.0f };
+        static const f32 side[] = { 0.0f, 300.0f, -300.0f };
+        for (s32 b = 0; b < 3 && !done; b++) {
+            for (s32 k = 0; k < 3 && !done; k++) {
+                f32 x = px - dx * back[b] + dz * side[k];
+                f32 z = pz - dz * back[b] - dx * side[k];
+                if (dx == 0.0f && dz == 0.0f) {
+                    x = px + ring_dir[(i + k) & 7][0] * back[b];
+                    z = pz + ring_dir[(i + k) & 7][1] * back[b];
+                }
+                if (spot_free(type, x, z, heading, layer)) {
+                    escort_move_to(e, player, x, z);
+                    done = 1;
+                }
+            }
         }
     }
 }
@@ -396,7 +504,13 @@ static void step_side(Side* s, u32 wanted, s32 now, u8* ref, u32 class_option, s
     }
 
     s32 type = pick_type(class_option, TANK_TYPE(ref));
-    u8* tank = spawn_near(cx, cz, heading, layer, TANK_GANG(ref), type, ai_state);
+    u8* tank = NULL;
+    if (s == &allies) {
+        tank = spawn_at_base(TANK_GANG(ref), type, ai_state);
+    }
+    if (tank == NULL) {
+        tank = spawn_near(cx, cz, heading, layer, TANK_GANG(ref), type, ai_state);
+    }
     if (tank != NULL) {
         s->made++;
         s->tries = 0;
@@ -445,6 +559,7 @@ void gang_mod_on_frame(void) {
         reset_side(&allies);
         reset_side(&enemies);
         escort_count = 0;
+        catchup_next_time = 0;
     }
     last_time = now;
 
@@ -457,6 +572,9 @@ void gang_mod_on_frame(void) {
     escorts_tidy();
     if (player == NULL) {
         return;
+    }
+    if (BTGA_GAME_MODE == BTGA_MODE_CAMPAIGN && now >= START_DELAY) {
+        escorts_catch_up(now, player);
     }
     rng_state ^= (u32)now;
 

@@ -51,6 +51,14 @@ typedef double f64;
 // Fields of a tank object.
 #define TANK_X(t)        (*(f32*)((t) + 0x08))
 #define TANK_Z(t)        (*(f32*)((t) + 0x0C))
+#define TANK_Y(t)        (*(f32*)((t) + 0x10))
+#define TANK_PREV_X(t)   (*(f32*)((t) + 0x14)) // last frame's position
+#define TANK_PREV_Z(t)   (*(f32*)((t) + 0x18))
+#define TANK_PREV_Y(t)   (*(f32*)((t) + 0x1C))
+#define TANK_PLAN_X(t)   (*(f32*)((t) + 0x110)) // where the AI planned its route from
+#define TANK_PLAN_Z(t)   (*(f32*)((t) + 0x114))
+#define TANK_NAV_X(t)    (*(f32*)((t) + 0x150)) // the position other AI head for
+#define TANK_NAV_Z(t)    (*(f32*)((t) + 0x154))
 #define TANK_HEADING(t)  (*(u16*)((t) + 0x20))
 #define TANK_LAYER(t)    (*(u8*)((t) + 0x94))
 #define TANK_GANG(t)     (*(u8*)((t) + 0x95))   // 0x7F = no gang
@@ -70,6 +78,15 @@ typedef double f64;
 #define BTGA_GANG(i)        ((u8*)(0x80235F00 + 0x250 * (u32)(i)))
 #define GANG_FLAGS(g)       (*(u8*)((g) + 0x0A))
 #define GANG_TEAM(g)        (*(u32*)((g) + 0x10)) // gangs with the same team are allies
+// The gang's base spots, where it brings in its own tanks (func_800A9080):
+// 5 of 12 bytes, x and z (f32), heading (u16), layer (u8).
+#define GANG_BASE_SPOTS(g)      (*(u8**)((g) + 0x1E8))
+#define GANG_BASE_SPOT_COUNT    5
+#define BASE_SPOT_SIZE          12
+#define BASE_SPOT_X(s)          (*(f32*)((s) + 0x0))
+#define BASE_SPOT_Z(s)          (*(f32*)((s) + 0x4))
+#define BASE_SPOT_HEADING(s)    (*(u16*)((s) + 0x8))
+#define BASE_SPOT_LAYER(s)      (*(u8*)((s) + 0xA))
 #define GANG_WEAPON_A(g)    (*(s32*)((g) + 0x1F4))
 #define GANG_WEAPON_B(g)    (*(s32*)((g) + 0x1F8))
 
