@@ -51,13 +51,6 @@ static Side enemies;
 static s32 last_time = -1;
 static u32 rng_state = 0x1234567;
 
-// Spots to try around a point: 8 directions at a few distances.
-static const f32 ring_dir[8][2] = {
-    { 1.0f, 0.0f }, { 0.7071f, 0.7071f }, { 0.0f, 1.0f }, { -0.7071f, 0.7071f },
-    { -1.0f, 0.0f }, { -0.7071f, -0.7071f }, { 0.0f, -1.0f }, { 0.7071f, -0.7071f },
-};
-static const f32 ring_dist[] = { 220.0f, 320.0f, 440.0f, 580.0f, 750.0f };
-
 static u32 rng_next(void) {
     rng_state = rng_state * 1103515245u + 12345u;
     return rng_state >> 16;
@@ -221,23 +214,123 @@ static u8* spawn_at_base(u8 gang, s32 type, s32 ai_state) {
     return NULL;
 }
 
-// Makes one AI tank of `gang` near (cx, cz). Returns it, or NULL.
-static u8* spawn_near(f32 cx, f32 cz, u16 heading, u8 layer, u8 gang, s32 type, s32 ai_state) {
-    // Start the search in a random direction, so the tanks don't all line
-    // up on the same side.
-    s32 start = (s32)(rng_next() & 7);
+// --- Trails: where tanks have been. The game's own spot check only tests
+// that a point is inside the level's outer bounds (func_800B0364 /
+// func_800B02D4), not that it's ground, so a spot picked around a point can
+// be water or past the edge. A place a tank drove over a moment ago is real
+// ground, so when the game's own spawn points are taken, the mod only uses
+// those. Every half second it notes where each tank is, for the last 4 s.
+#define TRAIL_LEN    8
+#define TRAIL_EVERY  15   // 1/30 s
 
-    for (u32 d = 0; d < sizeof(ring_dist) / sizeof(ring_dist[0]); d++) {
-        for (s32 k = 0; k < 8; k++) {
-            s32 dir = (start + k) & 7;
-            f32 x = cx + ring_dir[dir][0] * ring_dist[d];
-            f32 z = cz + ring_dir[dir][1] * ring_dist[d];
-            if (spot_free(type, x, z, heading, layer)) {
-                return make_tank(x, z, heading, layer, gang, type, ai_state);
+typedef struct {
+    f32 x;
+    f32 z;
+    u32 team;   // the team of the tank that was there
+    u8 layer;
+    u8 valid;
+} TrailPoint;
+
+static TrailPoint trail[BTGA_TANK_SLOTS][TRAIL_LEN];
+static u8 trail_pos[BTGA_TANK_SLOTS];
+static s32 trail_next_time = 0;
+
+static void trail_clear(void) {
+    for (s32 i = 0; i < BTGA_TANK_SLOTS; i++) {
+        for (s32 k = 0; k < TRAIL_LEN; k++) {
+            trail[i][k].valid = 0;
+        }
+        trail_pos[i] = 0;
+    }
+    trail_next_time = 0;
+}
+
+// A tank whose trail is ground for any tank: no boats or hovertanks (they
+// go over water), no bosses, and no path-following vehicles (control 3).
+static s32 leaves_ground_trail(u8* t) {
+    s32 type = TANK_TYPE(t);
+    s32 control = TANK_CONTROL(t);
+    return type != TANK_HOVERTANK && type < TANK_ATTACK_BOAT && control <= 2 && TANK_GANG_PTR(t) != NULL;
+}
+
+static void trail_update(s32 now) {
+    if (now < trail_next_time) {
+        return;
+    }
+    trail_next_time = now + TRAIL_EVERY;
+    for (s32 i = 0; i < BTGA_TANK_SLOTS; i++) {
+        u8* t = tank_slot(i);
+        if (!tank_alive(t)) {
+            // Gone: forget it, so a new tank in this slot starts afresh.
+            for (s32 k = 0; k < TRAIL_LEN; k++) {
+                trail[i][k].valid = 0;
             }
+            continue;
+        }
+        if (!leaves_ground_trail(t)) {
+            continue;
+        }
+        TrailPoint* p = &trail[i][trail_pos[i]];
+        p->x = TANK_X(t);
+        p->z = TANK_Z(t);
+        p->team = GANG_TEAM(TANK_GANG_PTR(t));
+        p->layer = TANK_LAYER(t);
+        p->valid = 1;
+        trail_pos[i] = (u8)((trail_pos[i] + 1) % TRAIL_LEN);
+    }
+}
+
+// A free spot on a trail of `team`'s tanks (or any team's, if team is 0),
+// on `layer`, between min_d and max_d from (cx, cz), as close to want_d as
+// possible. Returns 1 and the spot, or 0.
+static s32 trail_spot(s32 type, u32 team, u8 layer, f32 cx, f32 cz, f32 min_d, f32 max_d, f32 want_d,
+                      u16 heading, f32* out_x, f32* out_z) {
+    static u8 tried[BTGA_TANK_SLOTS][TRAIL_LEN];
+    for (s32 i = 0; i < BTGA_TANK_SLOTS; i++) {
+        for (s32 k = 0; k < TRAIL_LEN; k++) {
+            tried[i][k] = 0;
         }
     }
-    return NULL;
+    // Try the best remaining point, up to a handful of times.
+    for (s32 attempt = 0; attempt < 12; attempt++) {
+        s32 bi = -1, bk = -1;
+        f32 best = 1e30f;
+        for (s32 i = 0; i < BTGA_TANK_SLOTS; i++) {
+            for (s32 k = 0; k < TRAIL_LEN; k++) {
+                TrailPoint* p = &trail[i][k];
+                if (!p->valid || tried[i][k] || p->layer != layer || (team != 0 && p->team != team)) {
+                    continue;
+                }
+                f32 dx = p->x - cx;
+                f32 dz = p->z - cz;
+                f32 d2 = dx * dx + dz * dz;
+                if (d2 < min_d * min_d || d2 > max_d * max_d) {
+                    continue;
+                }
+                // Compare squared distances to want_d squared: same order.
+                f32 off = d2 - want_d * want_d;
+                if (off < 0) {
+                    off = -off;
+                }
+                if (off < best) {
+                    best = off;
+                    bi = i;
+                    bk = k;
+                }
+            }
+        }
+        if (bi < 0) {
+            return 0;
+        }
+        tried[bi][bk] = 1;
+        TrailPoint* p = &trail[bi][bk];
+        if (spot_free(type, p->x, p->z, heading, layer)) {
+            *out_x = p->x;
+            *out_z = p->z;
+            return 1;
+        }
+    }
+    return 0;
 }
 
 static void reset_side(Side* s) {
@@ -326,20 +419,12 @@ static void escorts_tidy(void) {
 
 // --- Catch-up: the game's AI can't keep up with you at full speed, and can
 // get stuck on the scenery. An escort more than CATCHUP_DIST away (far into
-// the fog) is moved to a free spot behind you, the way you're driving.
+// the fog) is moved to a free spot your side has just driven over, about 600
+// from you (so, in practice, behind you).
 #define CATCHUP_DIST  3000.0f
 #define CATCHUP_EVERY 30         // check once a second (1/30 s)
 
 static s32 catchup_next_time = 0;
-static f32 player_last_x = 0.0f;
-static f32 player_last_z = 0.0f;
-
-static f32 approx_len(f32 x, f32 z) {
-    // Good enough for a direction: max + half min.
-    f32 ax = x < 0 ? -x : x;
-    f32 az = z < 0 ? -z : z;
-    return ax > az ? ax + az * 0.5f : az + ax * 0.5f;
-}
 
 static void escort_move_to(u8* e, u8* player, f32 x, f32 z) {
     TANK_X(e) = x;
@@ -364,45 +449,18 @@ static void escorts_catch_up(s32 now, u8* player) {
 
     f32 px = TANK_X(player);
     f32 pz = TANK_Z(player);
-    // Which way you're going: from where you were a second ago.
-    f32 dx = px - player_last_x;
-    f32 dz = pz - player_last_z;
-    player_last_x = px;
-    player_last_z = pz;
-    f32 len = approx_len(dx, dz);
-    if (len < 20.0f) {
-        dx = 0.0f;
-        dz = 0.0f;
-    } else {
-        dx /= len;
-        dz /= len;
-    }
 
     for (s32 i = 0; i < escort_count; i++) {
         u8* e = escorts[i];
         if (!tank_alive(e) || dist2(e, player) < CATCHUP_DIST * CATCHUP_DIST) {
             continue;
         }
-        s32 type = TANK_TYPE(e);
-        u8 layer = TANK_LAYER(player);
-        u16 heading = TANK_HEADING(player);
-        s32 done = 0;
-        // Behind you first (then to the sides), a little farther each time.
-        static const f32 back[] = { 500.0f, 700.0f, 900.0f };
-        static const f32 side[] = { 0.0f, 300.0f, -300.0f };
-        for (s32 b = 0; b < 3 && !done; b++) {
-            for (s32 k = 0; k < 3 && !done; k++) {
-                f32 x = px - dx * back[b] + dz * side[k];
-                f32 z = pz - dz * back[b] - dx * side[k];
-                if (dx == 0.0f && dz == 0.0f) {
-                    x = px + ring_dir[(i + k) & 7][0] * back[b];
-                    z = pz + ring_dir[(i + k) & 7][1] * back[b];
-                }
-                if (spot_free(type, x, z, heading, layer)) {
-                    escort_move_to(e, player, x, z);
-                    done = 1;
-                }
-            }
+        // Somewhere your side has just driven, a little behind you.
+        f32 x, z;
+        u32 team = GANG_TEAM(TANK_GANG_PTR(player));
+        if (trail_spot(TANK_TYPE(e), team, TANK_LAYER(player), px, pz, 300.0f, 1500.0f, 600.0f,
+                       TANK_HEADING(player), &x, &z)) {
+            escort_move_to(e, player, x, z);
         }
     }
 }
@@ -612,12 +670,24 @@ static void step_side(Side* s, u32 wanted, s32 now, u8* ref, u32 class_option, s
     }
 
     s32 type = pick_type(class_option, TANK_TYPE(ref));
+    u8 gang = TANK_GANG(ref);
+    u32 team = GANG_TEAM(BTGA_GANG(gang));
     u8* tank = NULL;
+    f32 x, z;
     if (s == &allies) {
-        tank = spawn_at_base(TANK_GANG(ref), type, ai_state);
-    }
-    if (tank == NULL) {
-        tank = spawn_near(cx, cz, heading, layer, TANK_GANG(ref), type, ai_state);
+        // Your gang's base spots, else where your side has just been.
+        tank = spawn_at_base(gang, type, ai_state);
+        if (tank == NULL && trail_spot(type, team, layer, cx, cz, 150.0f, 1200.0f, 350.0f, heading, &x, &z)) {
+            tank = make_tank(x, z, heading, layer, gang, type, ai_state);
+        }
+    } else {
+        // The generator's own spot (or the enemy tank's), else where that
+        // enemy's side has just been, near it.
+        if (spot_free(type, cx, cz, heading, layer)) {
+            tank = make_tank(cx, cz, heading, layer, gang, type, ai_state);
+        } else if (trail_spot(type, team, layer, cx, cz, 0.0f, 1500.0f, 200.0f, heading, &x, &z)) {
+            tank = make_tank(x, z, heading, layer, gang, type, ai_state);
+        }
     }
     if (tank != NULL) {
         s->made++;
@@ -670,6 +740,7 @@ void gang_mod_on_frame(void) {
         escort_count = 0;
         catchup_next_time = 0;
         room_next_time = 0;
+        trail_clear();
     }
     last_time = now;
 
@@ -677,6 +748,7 @@ void gang_mod_on_frame(void) {
         return;
     }
 
+    trail_update(now);
     u8* player = find_player();
     escort_player = player;
     escorts_tidy();

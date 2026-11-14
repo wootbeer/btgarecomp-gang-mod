@@ -60,7 +60,11 @@ NULL before counting it off its generator, so tanks with no generator are fine.
 
 ## Spot check: `func_8008F4AC`
 `(type, x, z, heading, layer, check_ground, alt, ignore)`. Returns nonzero
-when the tank fits: on the map, on the ground, clear of others. The generators
+when the tank fits: inside the level's outer bounds and clear of other tanks
+and objects. "check_ground" only tests the bounds: two rectangles per layer
+(s16 x0, z0, x1, z1 at +0x04 and +0x0C of a 32-byte record per layer, from
+the pointer at `0x80219498`; `func_800B02D4` and `func_800B0364`). Water and
+the dead area inside the rectangles pass. The generators
 call it with `check_ground = 1`, `alt = 0`.
 
 ## Gangs
@@ -232,3 +236,13 @@ taking out an AI tank with `func_8008B82C(tank, 0x7F, 0)`: no kill credited,
 its generator's alive count (`+0x2B`) goes down, and the slot is free at once.
 The mod does the same for its allies (an enemy 3500+ from the player, not a
 boat or boss) and adds one back to that generator's tanks left (`+0x18`).
+
+## Spawn spots that are really ground
+Reported: allies in the water on Tower Bridge, extra enemies out of bounds in
+Assault on SF. Spots picked in a ring around a point passed `func_8008F4AC`
+but weren't ground (see the spot check above). The mod now keeps where each
+tank has been (every 0.5 s, the last 4 s; not boats, hovertanks, bosses or
+path-following vehicles) and only uses those points, after the game's own
+spawn points (gang base spots, a generator's spot). Checked in Assault on SF
+(6 extra enemies, 3 allies: all came in on spawn points or trail points and
+drove off) and Tower Bridge (escorts stayed on the bridge).

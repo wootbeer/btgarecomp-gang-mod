@@ -59,6 +59,11 @@ them again.
   mission's own class for that tank instead.
 - **Random** loads every ordinary tank class, as *All Tanks All Levels* does.
   That needs more memory. btgarecomp has had room for it since 0.1.4.
+- Added tanks only come in on the game's own spawn points (your gang's base
+  spots, an enemy generator's spot) or on ground a tank has driven over in
+  the last few seconds. The game's own spot check doesn't test for ground
+  (only that a point is inside the level's outer bounds), so spots picked
+  around a point could be water or past the map's edge.
 - Added tanks never come in on or right beside a train track (within 150
   units), so a train can't run into them.
 - The game has 24 tank slots. Extra enemies leave 4 free for the mission's

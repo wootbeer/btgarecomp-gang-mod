@@ -1,4 +1,8 @@
-## Gang Mod: Extra Tanks 1.0.1
+## Gang Mod: Extra Tanks 1.0.2
+
+**Fix:** added tanks could come in out of bounds: allies in the water on Tower Bridge, and extra enemies past the edge of the map in Assault on SF, where they had to be hunted down to finish the mission. The game's own spot check only tests that a point is inside the level's outer bounds, not that it's ground. Now tanks only come in on the game's own spawn points, or on ground a tank has just driven over, and escorts that fall behind are brought up the same way.
+
+### 1.0.1
 
 **Fix:** allies didn't appear in Champs Elysee. That mission fills almost every tank slot with its own enemies (23 of the game's 24), and the mod was keeping 4 free. Now allies only keep 1 free, and in a full mission the mod makes room the way the game does for your own respawn: it takes out an enemy tank far out of sight and gives it back to its generator, so the mission's army is the same size.
 
