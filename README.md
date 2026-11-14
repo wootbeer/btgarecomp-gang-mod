@@ -61,8 +61,12 @@ them again.
   That needs more memory. btgarecomp has had room for it since 0.1.4.
 - Added tanks never come in on or right beside a train track (within 150
   units), so a train can't run into them.
-- The game has 24 tank slots. The mod always leaves 4 free for the game's own
-  tanks, so in a crowded mission you can get fewer than you asked for.
+- The game has 24 tank slots. Extra enemies leave 4 free for the mission's
+  own tanks, so in a crowded mission you can get fewer of them than you asked
+  for. Allies leave 1. In a mission that fills almost every slot (Champs
+  Elysee), the mod makes room for them as the game does for your own respawn:
+  it takes out an enemy tank far out of sight (3500+ away) and gives it back
+  to its generator, so the mission's army stays the same size.
 - The arrows over tanks (and their marks on the map) only show while your
   own tank has radar, for the mission's tanks and the added ones alike.
 - Remove Trains was tested in Truck Stop. Texas Slave Fortress has a slave

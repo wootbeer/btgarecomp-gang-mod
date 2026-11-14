@@ -15,15 +15,20 @@
 #include "btga.h"
 #include "trains.h"
 
-// Never fill the last few tank slots: the game needs them for its own
-// tanks (generators, convoys, your respawn).
-#define FREE_SLOTS_TO_KEEP 4
+// Slots left free for the game's own tanks. Extra enemies leave a few, so
+// they don't crowd the mission's own. Allies leave one: your own respawn
+// takes an AI tank's slot when none is free (func_8008AE04), so they can fill
+// up. Some missions (Champs Elysee) start with 23 of the 24 slots in use;
+// there allies wait for a slot instead (see step_side).
+#define FREE_SLOTS_FOR_ENEMIES 4
+#define FREE_SLOTS_FOR_ALLIES  1
 
 // Wait this long into a mission before adding tanks (1/30 s), and this long
 // between two tanks of a side, so they don't pile up.
 #define START_DELAY   60
 #define SPAWN_SPACING 10
-// Give up on a side after this many tries without room for a tank.
+// Give up on a side after this many tries without a free spot for a tank.
+// (Waiting for a free slot doesn't count.)
 #define MAX_TRIES     120
 
 // Class options (mod.toml): 0 Random, 1 Same as the mission's, then the tanks.
@@ -37,7 +42,7 @@
 typedef struct {
     u8 done;        // all added (or gave up)
     u8 made;        // tanks added so far
-    u8 tries;       // spawn attempts without room
+    u8 tries;       // spawn attempts without a free spot
     s32 next_time;  // level time for the next try
 } Side;
 
@@ -512,6 +517,50 @@ static s32 allies_escort(u32 orders) {
     return orders == ORDERS_ESCORT;
 }
 
+// --- Room for allies in a full mission. Some missions fill almost every
+// tank slot with their own enemies (Champs Elysee: 23 of 24), and they don't
+// free up often. Then the mod does what the game does for your own respawn:
+// it takes out one enemy AI tank, far out of sight, and gives it back to its
+// tank generator to bring in again later, so the mission's army is the same.
+#define ROOM_MIN_DIST  3500.0f   // only enemies at least this far from you
+#define ROOM_EVERY     60        // at most one every 2 s (1/30 s)
+
+static s32 room_next_time = 0;
+
+static s32 make_room(s32 now, u8* player) {
+    if (now < room_next_time) {
+        return 0;
+    }
+    room_next_time = now + ROOM_EVERY;
+
+    u8* best = NULL;
+    f32 best_d = ROOM_MIN_DIST * ROOM_MIN_DIST;
+    for (s32 i = 0; i < BTGA_TANK_SLOTS; i++) {
+        u8* t = tank_slot(i);
+        s32 control = TANK_CONTROL(t);
+        if (!is_enemy_of(t, player) || (control != 1 && control != 2)) {
+            continue;
+        }
+        if (TANK_TYPE(t) >= TANK_ATTACK_BOAT) {
+            continue; // never boats or bosses
+        }
+        f32 d = dist2(t, player);
+        if (d > best_d) {
+            best_d = d;
+            best = t;
+        }
+    }
+    if (best == NULL) {
+        return 0;
+    }
+    u8* spawner = TANK_SPAWNER(best);
+    if (spawner != NULL && OBJ_TYPE(spawner) == OBJ_TYPE_TANK_SPAWNER && SPAWNER_LEFT(spawner) != 0xFFFF) {
+        SPAWNER_LEFT(spawner)++;
+    }
+    func_8008B82C(best, 0x7F, 0);
+    return 1;
+}
+
 // One step of a side: makes at most one tank. `wanted` is how many to add.
 // `ai_state` < 0: take it from the reference tank's generator (enemies),
 // or hunt if it has none.
@@ -527,10 +576,15 @@ static void step_side(Side* s, u32 wanted, s32 now, u8* ref, u32 class_option, s
         return;
     }
 
-    if (tanks_in_use() >= BTGA_TANK_SLOTS - FREE_SLOTS_TO_KEEP) {
-        s->tries++;
-        s->next_time = now + SPAWN_SPACING * 3;
-        return;
+    // No slot: wait. Allies check every frame, so when a tank dies they get
+    // its slot before the mission's tank generators bring in another.
+    s32 keep_free = (s == &allies) ? FREE_SLOTS_FOR_ALLIES : FREE_SLOTS_FOR_ENEMIES;
+    if (tanks_in_use() >= BTGA_TANK_SLOTS - keep_free) {
+        if (s != &allies || !escort_player || !make_room(now, escort_player) ||
+            tanks_in_use() >= BTGA_TANK_SLOTS - keep_free) {
+            s->next_time = (s == &allies) ? now : now + SPAWN_SPACING * 3;
+            return;
+        }
     }
 
     f32 cx = TANK_X(ref);
@@ -615,6 +669,7 @@ void gang_mod_on_frame(void) {
         reset_side(&enemies);
         escort_count = 0;
         catchup_next_time = 0;
+        room_next_time = 0;
     }
     last_time = now;
 

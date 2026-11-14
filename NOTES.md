@@ -224,3 +224,11 @@ hit). Their setup is the same: same gang, control, state, skill, weapons.
 - The player's gang in SF Airport / Truck Stop is level 1: shot delay 2.5
   (/1.1), sight 0.4, range 0.2, special weapons 0. Level 8 is the best: 1.0,
   0.99, 0.4.
+
+## Full missions (Champs Elysee)
+Champs Elysee (level 10, campaign step 20) has 23 of the 24 tank slots in use
+a few seconds in. `func_8008AE04` makes room for a human tank (control 0) by
+taking out an AI tank with `func_8008B82C(tank, 0x7F, 0)`: no kill credited,
+its generator's alive count (`+0x2B`) goes down, and the slot is free at once.
+The mod does the same for its allies (an enemy 3500+ from the player, not a
+boat or boss) and adds one back to that generator's tanks left (`+0x18`).

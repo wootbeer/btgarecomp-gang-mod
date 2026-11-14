@@ -1,4 +1,7 @@
-## Gang Mod: Extra Tanks 1.0.0
+## Gang Mod: Extra Tanks 1.0.1
+
+**Fix:** allies didn't appear in Champs Elysee. That mission fills almost every tank slot with its own enemies (23 of the game's 24), and the mod was keeping 4 free. Now allies only keep 1 free, and in a full mission the mod makes room the way the game does for your own respawn: it takes out an enemy tank far out of sight and gives it back to its generator, so the mission's army is the same size.
+
 
 More friendly and enemy tanks in every campaign mission of the BattleTanx: Global Assault recomp. Everything is set in the mod's options:
 

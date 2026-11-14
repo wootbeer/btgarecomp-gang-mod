@@ -120,6 +120,7 @@ void func_80097BA4(s32 handle, s32 a1);
 #define SPAWNER_HEADING(o)   (*(u16*)((o) + 0x14))
 #define SPAWNER_LAYER(o)     (*(u8*)((o) + 0x16))
 #define SPAWNER_AI_STATE(o)  (*(u8*)((o) + 0x29)) // what its tanks do first
+#define SPAWNER_LEFT(o)      (*(u16*)((o) + 0x18)) // tanks it still has to bring in (0xFFFF: no limit)
 
 // Tank types (index into the table at 0x80122E30, 0xD0 bytes each).
 enum {
@@ -165,6 +166,11 @@ typedef struct {
 
 // Makes a tank. Returns the tank object, or NULL when there's no free slot.
 void* func_8008AE04(TankSpawn* spawn);
+
+// Takes a tank out: its death, with `killer_gang` credited (0x7F: no one).
+// `mode` 0 is what func_8008AE04 uses to make room for a human player's tank
+// when every slot is taken. The slot is free again right after.
+void func_8008B82C(void* tank, s32 killer_gang, s32 mode);
 
 // Gives an AI tank a tank to go to: within `range`, and attacking it if
 // `attack`. In state 5 (follow) the tank keeps to it while it's alive,
