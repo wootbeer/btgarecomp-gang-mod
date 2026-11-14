@@ -121,6 +121,11 @@ void func_80097BA4(s32 handle, s32 a1);
 #define SPAWNER_LAYER(o)     (*(u8*)((o) + 0x16))
 #define SPAWNER_AI_STATE(o)  (*(u8*)((o) + 0x29)) // what its tanks do first
 #define SPAWNER_LEFT(o)      (*(u16*)((o) + 0x18)) // tanks it still has to bring in (0xFFFF: no limit)
+// Generators can be linked in a ring that shares one stock: when one brings
+// in a tank, the game takes 1 off every generator in the ring (0x800DED5C),
+// so they all reach 0 together and are all deleted together (a generator
+// with 0 left deletes itself). Keep them equal.
+#define SPAWNER_NEXT(o)      (*(u8**)((o) + 0x2C)) // next generator in its ring, or NULL
 
 // Tank types (index into the table at 0x80122E30, 0xD0 bytes each).
 enum {

@@ -585,6 +585,41 @@ static s32 allies_escort(u32 orders) {
 
 static s32 room_next_time = 0;
 
+static s32 is_generator(u8* o) {
+    return (u32)o >= 0x80224EF0u && (u32)o < 0x80224EF0u + 0x44u * BTGA_OBJ_POOL &&
+           *(u32*)o != 0 && OBJ_TYPE(o) == OBJ_TYPE_TANK_SPAWNER;
+}
+
+// Gives a tank back to the generator that made it: one more to bring in, on
+// every generator of its ring, as the game takes one off them all. Only when
+// the ring is whole and its counts agree; otherwise (a generator that has run
+// out and may be deleted, a ring that isn't what it should be) it leaves the
+// counts alone, and the mission just has one tank fewer.
+static void give_back_to_generator(u8* gen) {
+    if (gen == NULL || !is_generator(gen)) {
+        return;
+    }
+    u16 left = SPAWNER_LEFT(gen);
+    if (left == 0 || left == 0xFFFF) {
+        return;
+    }
+    // Check the whole ring first.
+    u8* g = SPAWNER_NEXT(gen);
+    s32 steps = 0;
+    while (g != NULL && g != gen) {
+        if (!is_generator(g) || SPAWNER_LEFT(g) != left || ++steps > 32) {
+            return;
+        }
+        g = SPAWNER_NEXT(g);
+    }
+    SPAWNER_LEFT(gen) = (u16)(left + 1);
+    g = SPAWNER_NEXT(gen);
+    while (g != NULL && g != gen) {
+        SPAWNER_LEFT(g) = (u16)(left + 1);
+        g = SPAWNER_NEXT(g);
+    }
+}
+
 static s32 make_room(s32 now, u8* player) {
     if (now < room_next_time) {
         return 0;
@@ -611,10 +646,7 @@ static s32 make_room(s32 now, u8* player) {
     if (best == NULL) {
         return 0;
     }
-    u8* spawner = TANK_SPAWNER(best);
-    if (spawner != NULL && OBJ_TYPE(spawner) == OBJ_TYPE_TANK_SPAWNER && SPAWNER_LEFT(spawner) != 0xFFFF) {
-        SPAWNER_LEFT(spawner)++;
-    }
+    give_back_to_generator(TANK_SPAWNER(best));
     func_8008B82C(best, 0x7F, 0);
     return 1;
 }

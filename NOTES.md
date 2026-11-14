@@ -235,7 +235,17 @@ a few seconds in. `func_8008AE04` makes room for a human tank (control 0) by
 taking out an AI tank with `func_8008B82C(tank, 0x7F, 0)`: no kill credited,
 its generator's alive count (`+0x2B`) goes down, and the slot is free at once.
 The mod does the same for its allies (an enemy 3500+ from the player, not a
-boat or boss) and adds one back to that generator's tanks left (`+0x18`).
+boat or boss) and gives the tank back to its generator: one more in `+0x18`.
+
+Generators can be linked in a ring through `+0x2C` and share one stock: when
+one brings in a tank, `0x800DED5C` takes 1 off every generator in the ring,
+so they reach 0 together, and a generator with 0 left deletes itself (its
+update reports done, `0x800DEB88`), so the whole ring goes at once. 1.0.1 and
+1.0.2 added the one back on a single generator; the others then reached 0 and
+were freed while it still linked to them, and its next tank walked the ring
+into reused memory (reported crash: reading `0xC071C33A` in `func_800DEB1C`,
+a float where `+0x2C` should be, plus `0x18`). 1.0.3 adds it to every
+generator of the ring, and only when the ring is whole and its counts agree.
 
 ## Spawn spots that are really ground
 Reported: allies in the water on Tower Bridge, extra enemies out of bounds in

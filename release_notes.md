@@ -1,4 +1,8 @@
-## Gang Mod: Extra Tanks 1.0.2
+## Gang Mod: Extra Tanks 1.0.3
+
+**Crash fix** (1.0.1 and 1.0.2): a crash in `func_800DEB1C` (the game's tank generators) in full missions such as Champs Elysee. When the mod made room for an ally, it gave the removed enemy back to its generator, but only to that one generator. Some generators are linked and share one count; with the counts out of step, the others ran out and were deleted while the topped-up one still pointed at them. The mod now gives the tank back to every generator of the ring, as the game counts them, and leaves the counts alone if the ring isn't whole.
+
+### 1.0.2
 
 **Fix:** added tanks could come in out of bounds: allies in the water on Tower Bridge, and extra enemies past the edge of the map in Assault on SF, where they had to be hunted down to finish the mission. The game's own spot check only tests that a point is inside the level's outer bounds, not that it's ground. Now tanks only come in on the game's own spawn points, or on ground a tank has just driven over, and escorts that fall behind are brought up the same way.
 
